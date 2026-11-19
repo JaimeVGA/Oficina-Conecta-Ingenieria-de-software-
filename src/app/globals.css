@@ -1,0 +1,162 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  background-color: #f8fafc;
+  color: #0f172a;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* --------------------------------------------------------------------------
+ * TEMA OSCURO NOCTURNO (dark) Y AZUL CORPORATIVO OSCURO (midnight)
+ * -------------------------------------------------------------------------- */
+html[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+html[data-theme="dark"] body,
+html[data-theme="dark"] .bg-slate-50 {
+  background-color: #0b1120 !important;
+  color: #e2e8f0;
+}
+
+html[data-theme="dark"] .bg-white {
+  background-color: #111827 !important;
+  color: #f1f5f9;
+}
+
+html[data-theme="dark"] .bg-slate-100 {
+  background-color: #1e293b !important;
+  color: #e2e8f0;
+}
+
+html[data-theme="dark"] .bg-slate-200 {
+  background-color: #334155 !important;
+  color: #f1f5f9;
+}
+
+html[data-theme="dark"] .hover\:bg-slate-50:hover {
+  background-color: #1e293b !important;
+}
+
+html[data-theme="dark"] .hover\:bg-slate-100:hover {
+  background-color: #334155 !important;
+}
+
+html[data-theme="dark"] .text-slate-900 {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .text-slate-800 {
+  color: #e2e8f0 !important;
+}
+
+html[data-theme="dark"] .text-slate-700 {
+  color: #cbd5e1 !important;
+}
+
+html[data-theme="dark"] .text-slate-600 {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .text-slate-500 {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .border-slate-200,
+html[data-theme="dark"] .border-slate-300,
+html[data-theme="dark"] .border-slate-100,
+html[data-theme="dark"] .divide-slate-100 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #1e293b !important;
+}
+
+html[data-theme="dark"] input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+html[data-theme="dark"] select,
+html[data-theme="dark"] textarea {
+  background-color: #0f172a !important;
+  color: #f1f5f9 !important;
+  border-color: #334155 !important;
+}
+
+/* Tema Azul Corporativo Oscuro (midnight) */
+html[data-theme="midnight"] {
+  color-scheme: dark;
+}
+
+html[data-theme="midnight"] body,
+html[data-theme="midnight"] .bg-slate-50 {
+  background-color: #071324 !important;
+  color: #e2e8f0;
+}
+
+html[data-theme="midnight"] .bg-white {
+  background-color: #0f213c !important;
+  color: #f1f5f9;
+}
+
+html[data-theme="midnight"] .bg-slate-100 {
+  background-color: #173054 !important;
+  color: #e2e8f0;
+}
+
+html[data-theme="midnight"] .bg-slate-200 {
+  background-color: #21406e !important;
+  color: #f8fafc;
+}
+
+html[data-theme="midnight"] .hover\:bg-slate-50:hover {
+  background-color: #173054 !important;
+}
+
+html[data-theme="midnight"] .hover\:bg-slate-100:hover {
+  background-color: #21406e !important;
+}
+
+html[data-theme="midnight"] .text-slate-900 {
+  color: #f8fafc !important;
+}
+
+html[data-theme="midnight"] .text-slate-800 {
+  color: #e2e8f0 !important;
+}
+
+html[data-theme="midnight"] .text-slate-700 {
+  color: #cbd5e1 !important;
+}
+
+html[data-theme="midnight"] .text-slate-600,
+html[data-theme="midnight"] .text-slate-500 {
+  color: #93c5fd !important;
+}
+
+html[data-theme="midnight"] .border-slate-200,
+html[data-theme="midnight"] .border-slate-300,
+html[data-theme="midnight"] .border-slate-100,
+html[data-theme="midnight"] .divide-slate-100 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #1e3a5f !important;
+}
+
+html[data-theme="midnight"] input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+html[data-theme="midnight"] select,
+html[data-theme="midnight"] textarea {
+  background-color: #08182e !important;
+  color: #f8fafc !important;
+  border-color: #254b7a !important;
+}
+
+/* Densidad de interfaz */
+html[data-density="compact"] main {
+  font-size: 0.92rem;
+}
+
+html[data-density="comfortable"] main {
+  line-height: 1.65;
+}
+
+/* Fin de estilos globales y temas de Oficina Conecta */

@@ -1,0 +1,24 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Oficina Conecta//Grupo 502-A Equipo I//ES
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:Oficina Conecta — Fechas Límite
+X-WR-TIMEZONE:America/Mexico_City
+BEGIN:VEVENT
+UID:tarea-33e34b3e-4f66-48ae-acfc-a666806f4ac3@oficinaconecta.mx
+SEQUENCE:1
+DTSTAMP:20261119T041536Z
+LAST-MODIFIED:20261119T041536Z
+DTSTART:20261124T230000Z
+DTEND:20261125T000000Z
+SUMMARY:[Puebla de Zaragoza] Inspección Subestación Norte (Modernización
+  Planta Sur)
+DESCRIPTION:Folio: TAR-PUE-017\nSede: Puebla de Zaragoza\nDepartamento: Man
+ tenimiento\nProyecto: Modernización Planta Sur\nResponsable: Sofía Moral
+ es\nEstado: ASIGNADA (0%)\nFecha límite (Mexico_City): 2026-11-24 18:00\n
+ Alcance: Revisión termográfica y balanceo de fases.\nSecuencia ICS: 1
+LOCATION:Puebla de Zaragoza
+STATUS:CONFIRMED
+END:VEVENT
+END:VCALENDAR
