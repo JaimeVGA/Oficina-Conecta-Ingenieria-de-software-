@@ -51,6 +51,10 @@ CREATE POLICY pol_deptos_gs_update ON public.departamentos FOR UPDATE TO authent
 USING (public.auth_rol() = 'GS' AND sede_id = public.auth_sede_id())
 WITH CHECK (public.auth_rol() = 'GS' AND sede_id = public.auth_sede_id());
 
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO authenticated;
+GRANT INSERT, UPDATE ON public.departamentos TO authenticated;
+GRANT INSERT, UPDATE ON public.proyectos TO authenticated;
+
 CREATE POLICY pol_perfiles_select ON public.perfiles_usuario FOR SELECT TO authenticated
 USING (
   id = auth.uid()
