@@ -88,14 +88,19 @@ export async function loginWithEmailPassword(
     if (!supabase) return { ok: false, message: 'Cliente Supabase no disponible.' };
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error || !data.user) {
-      return { ok: false, message: 'Credenciales inválidas. Verifique su correo y contraseña.' };
+      console.error('[adapter:login] Error signInWithPassword:', error);
+      return { ok: false, message: error?.message ?? 'Credenciales inválidas. Verifique su correo y contraseña.' };
     }
-    const { data: perfil } = await supabase
+    const { data: perfil, error: perfilErr } = await supabase
       .from('perfiles_usuario')
       .select('*')
       .eq('id', data.user.id)
       .eq('activo', true)
       .maybeSingle();
+    if (perfilErr) {
+      console.error('[adapter:login] Error consultando perfiles_usuario:', perfilErr);
+      return { ok: false, message: `Error consultando perfil: ${perfilErr.message}` };
+    }
     if (!perfil) {
       return { ok: false, message: 'Su cuenta no tiene un perfil operativo activo.' };
     }
