@@ -115,9 +115,11 @@ export async function loginWithEmailPassword(
   return { ok: true, perfil, localToken: signLocalSessionToken(perfil.id) };
 }
 
-export async function logoutSession(): Promise<void> {
+export async function logoutSession(responseObj?: {
+  cookies: { set: (...args: any[]) => any };
+}): Promise<void> {
   if (getBackendMode() === 'supabase') {
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createSupabaseServerClient(responseObj);
     if (supabase) {
       await supabase.auth.signOut({ scope: 'local' });
     }
@@ -137,6 +139,9 @@ export async function getCatalogos(actor: PerfilUsuario): Promise<{
       supabase.from('departamentos').select('*').order('nombre'),
       supabase.from('perfiles_usuario').select('*').eq('activo', true).order('nombre_completo'),
     ]);
+    if (sedesRes.error) console.error('[adapter:getCatalogos:sedes]', sedesRes.error);
+    if (deptosRes.error) console.error('[adapter:getCatalogos:departamentos]', deptosRes.error);
+    if (usersRes.error) console.error('[adapter:getCatalogos:usuarios]', usersRes.error);
     return {
       sedes: (sedesRes.data ?? []) as Sede[],
       departamentos: (deptosRes.data ?? []) as Departamento[],
@@ -150,7 +155,8 @@ export async function listProyectos(actor: PerfilUsuario): Promise<Proyecto[]> {
   if (getBackendMode() === 'supabase') {
     const supabase = await createSupabaseServerClient();
     if (!supabase) return [];
-    const { data } = await supabase.from('proyectos').select('*').order('creado_en', { ascending: false });
+    const { data, error } = await supabase.from('proyectos').select('*').order('creado_en', { ascending: false });
+    if (error) console.error('[adapter:listProyectos]', error);
     return (data ?? []) as Proyecto[];
   }
   return getLocalEngine().listProyectos(actor);
@@ -211,16 +217,17 @@ export async function listTareas(actor: PerfilUsuario): Promise<TareaEnriquecida
   if (getBackendMode() === 'supabase') {
     const supabase = await createSupabaseServerClient();
     if (!supabase) return [];
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('tareas')
       .select(
         `*,
         sedes(nombre),
         proyectos(nombre, fecha_fin_proyecto),
         departamentos(nombre),
-        perfiles_usuario!tareas_responsable_id_fkey(nombre_completo, correo)`
+        perfiles_usuario!fk_tarea_responsable_sede(nombre_completo, correo)`
       )
       .order('fecha_limite', { ascending: true });
+    if (error) console.error('[adapter:listTareas]', error);
     return (data ?? []).map((row: Record<string, unknown>) => {
       const s = row.sedes as { nombre?: string } | null;
       const p = row.proyectos as { nombre?: string; fecha_fin_proyecto?: string } | null;
@@ -326,7 +333,7 @@ export async function listSolicitudes(actor: PerfilUsuario): Promise<SolicitudEn
   if (getBackendMode() === 'supabase') {
     const supabase = await createSupabaseServerClient();
     if (!supabase) return [];
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('solicitudes_autorizacion')
       .select(
         `*,
@@ -336,6 +343,7 @@ export async function listSolicitudes(actor: PerfilUsuario): Promise<SolicitudEn
         bitacora_autorizaciones(*)`
       )
       .order('creado_en', { ascending: false });
+    if (error) console.error('[adapter:listSolicitudes]', error);
     return (data ?? []).map((row: Record<string, unknown>) => {
       const s = row.sedes as { nombre?: string } | null;
       const t = row.tareas as {
@@ -434,7 +442,8 @@ export async function listBitacora(actor: PerfilUsuario, tareaId?: string): Prom
       )
       .order('resuelto_en', { ascending: false });
     if (tareaId) query = query.eq('tarea_id', tareaId);
-    const { data } = await query;
+    const { data, error } = await query;
+    if (error) console.error('[adapter:listBitacora]', error);
     return (data ?? []).map((row: Record<string, unknown>) => {
       const s = row.sedes as { nombre?: string } | null;
       const t = row.tareas as { folio?: string; titulo?: string } | null;
@@ -465,12 +474,34 @@ export async function listDocumentosTarea(actor: PerfilUsuario, tareaId: string)
   if (getBackendMode() === 'supabase') {
     const supabase = await createSupabaseServerClient();
     if (!supabase) return null;
-    const { data: docs } = await supabase
+    const tarea = await getTareaById(actor, tareaId);
+    if (!tarea) return null;
+    const { data: docs, error } = await supabase
       .from('documentos_tarea')
-      .select('*, documento_versiones(*)')
+      .select('*, documento_versiones(*, perfiles_usuario!documento_versiones_autor_id_fkey(nombre_completo))')
       .eq('tarea_id', tareaId)
       .order('creado_en', { ascending: true });
-    return (docs ?? []) as unknown as DocumentoConVersiones[];
+    if (error) console.error('[adapter:listDocumentosTarea]', error);
+    return (docs ?? []).map((doc: Record<string, unknown>) => {
+      const { documento_versiones, ...rest } = doc;
+      const rawVersiones = Array.isArray(documento_versiones)
+        ? (documento_versiones as Record<string, unknown>[])
+        : [];
+      const versiones = rawVersiones
+        .map((v) => {
+          const { perfiles_usuario, ...vRest } = v;
+          const autor = perfiles_usuario as { nombre_completo?: string } | null;
+          return {
+            ...(vRest as unknown as DocumentoConVersiones['versiones'][number]),
+            ...(autor?.nombre_completo ? { autor_nombre: autor.nombre_completo } : {}),
+          };
+        })
+        .sort((a, b) => a.numero_version - b.numero_version);
+      return {
+        ...(rest as unknown as Omit<DocumentoConVersiones, 'versiones'>),
+        versiones,
+      };
+    });
   }
   return getLocalEngine().listDocumentosTarea(actor, tareaId);
 }
@@ -531,9 +562,15 @@ export async function registrarVersionDocumento(
       p_descripcion_cambio: input.descripcion_cambio,
     });
     if (error) {
+      console.error('[adapter:registrarVersionDocumento:rpc]', error);
+      await supabase.storage.from('documentos-tareas').remove([storagePath]).catch(() => null);
       return buildErrorResult('ERR-005', error.message, 500);
     }
-    return normalizeRpcResponse(data);
+    const normalized = normalizeRpcResponse(data);
+    if (!normalized.ok) {
+      await supabase.storage.from('documentos-tareas').remove([storagePath]).catch(() => null);
+    }
+    return normalized;
   }
   return getLocalEngine().registrarVersionDocumento(actor, input);
 }
@@ -579,10 +616,11 @@ export async function listCorreosSimulados(actor: PerfilUsuario): Promise<Correo
   if (getBackendMode() === 'supabase') {
     const supabase = await createSupabaseServerClient();
     if (!supabase) return [];
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('correos_simulados')
       .select('*, sedes(nombre), tareas(folio), solicitudes_autorizacion(folio)')
       .order('fecha_hora_prevista', { ascending: false });
+    if (error) console.error('[adapter:listCorreosSimulados]', error);
     return (data ?? []).map((row: Record<string, unknown>) => {
       const s = row.sedes as { nombre?: string } | null;
       const t = row.tareas as { folio?: string } | null;
@@ -618,7 +656,8 @@ export async function obtenerMetricasDashboard(actor: PerfilUsuario): Promise<Me
   if (getBackendMode() === 'supabase') {
     const supabase = await createSupabaseServerClient();
     if (!supabase) return [];
-    const { data } = await supabase.rpc('obtener_metricas_dashboard');
+    const { data, error } = await supabase.rpc('obtener_metricas_dashboard');
+    if (error) console.error('[adapter:obtenerMetricasDashboard]', error);
     const obj = data as { sedes?: MetricaSede[] } | null;
     return obj?.sedes ?? [];
   }
