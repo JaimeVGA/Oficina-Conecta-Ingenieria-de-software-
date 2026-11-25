@@ -13,19 +13,24 @@ export async function POST(req: Request) {
     );
   }
 
-  const result = await loginWithEmailPassword(email, password);
+  const res = NextResponse.json({ ok: false }, { status: 401 });
+  const result = await loginWithEmailPassword(email, password, res);
   if (!result.ok) {
     return NextResponse.json({ ok: false, error_code: 'ERR-001', message: result.message }, { status: 401 });
   }
 
-  const res = NextResponse.json({ ok: true, perfil: result.perfil }, { status: 200 });
+  const finalRes = NextResponse.json({ ok: true, perfil: result.perfil }, { status: 200 });
+  // Copiar cookies configuradas por supabase/ssr al response final
+  for (const c of res.cookies.getAll()) {
+    finalRes.cookies.set(c.name, c.value, c);
+  }
   if (result.localToken) {
-    res.cookies.set(LOCAL_SESSION_COOKIE, result.localToken, {
+    finalRes.cookies.set(LOCAL_SESSION_COOKIE, result.localToken, {
       httpOnly: true,
       sameSite: 'lax',
       path: '/',
       maxAge: 60 * 60 * 12,
     });
   }
-  return res;
+  return finalRes;
 }

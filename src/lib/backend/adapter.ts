@@ -81,10 +81,11 @@ export async function getCurrentActor(): Promise<PerfilUsuario | null> {
 
 export async function loginWithEmailPassword(
   email: string,
-  password: string
+  password: string,
+  responseObj?: { cookies: { set: (...args: any[]) => any } }
 ): Promise<{ ok: true; perfil: PerfilUsuario; localToken?: string } | { ok: false; message: string }> {
   if (getBackendMode() === 'supabase') {
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createSupabaseServerClient(responseObj);
     if (!supabase) return { ok: false, message: 'Cliente Supabase no disponible.' };
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error || !data.user) {
