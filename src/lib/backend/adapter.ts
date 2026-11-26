@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { createSupabaseServerClient, isSupabaseServerConfigured } from '@/lib/supabase/server';
 import { getLocalEngine } from '@/lib/backend/localEngine';
 import { buildErrorResult, normalizeRpcResponse } from '@/lib/errors/mapRpcError';
+import { isDemoToolsEnabled } from '@/lib/security/validation';
 import type {
   ApiResult,
   BitacoraEnriquecida,
@@ -22,9 +23,16 @@ import type {
 } from '@/lib/supabase/types';
 
 export const LOCAL_SESSION_COOKIE = 'oc_local_session';
+const PROD_EPHEMERAL_SECRET = crypto.randomBytes(32).toString('hex');
+const LOCAL_SESSION_MAX_AGE_MS = 12 * 60 * 60 * 1000;
 
 function getSessionSecret(): string {
-  return process.env.LOCAL_SESSION_SECRET ?? 'oficina-conecta-502a-equipo1-local-secret';
+  if (process.env.LOCAL_SESSION_SECRET && process.env.LOCAL_SESSION_SECRET.trim().length > 0) {
+    return process.env.LOCAL_SESSION_SECRET;
+  }
+  return process.env.NODE_ENV === 'production'
+    ? PROD_EPHEMERAL_SECRET
+    : 'oficina-conecta-502a-equipo1-local-secret';
 }
 
 export function signLocalSessionToken(userId: string): string {
@@ -44,8 +52,13 @@ export function verifyLocalSessionToken(token: string | undefined): string | nul
     const a = Buffer.from(sig);
     const b = Buffer.from(expected);
     if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
-    const decoded = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')) as { sub?: string };
-    return typeof decoded.sub === 'string' ? decoded.sub : null;
+    const decoded = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')) as {
+      sub?: string;
+      iat?: number;
+    };
+    if (typeof decoded.sub !== 'string' || typeof decoded.iat !== 'number') return null;
+    if (Date.now() - decoded.iat > LOCAL_SESSION_MAX_AGE_MS) return null;
+    return decoded.sub;
   } catch {
     return null;
   }
@@ -90,7 +103,7 @@ export async function loginWithEmailPassword(
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error || !data.user) {
       console.error('[adapter:login] Error signInWithPassword:', error);
-      return { ok: false, message: error?.message ?? 'Credenciales inválidas. Verifique su correo y contraseña.' };
+      return { ok: false, message: 'Credenciales inválidas. Verifique su correo y contraseña.' };
     }
     const { data: perfil, error: perfilErr } = await supabase
       .from('perfiles_usuario')
@@ -100,9 +113,10 @@ export async function loginWithEmailPassword(
       .maybeSingle();
     if (perfilErr) {
       console.error('[adapter:login] Error consultando perfiles_usuario:', perfilErr);
-      return { ok: false, message: `Error consultando perfil: ${perfilErr.message}` };
+      return { ok: false, message: 'Error interno al verificar el perfil de usuario.' };
     }
     if (!perfil) {
+      await supabase.auth.signOut({ scope: 'local' });
       return { ok: false, message: 'Su cuenta no tiene un perfil operativo activo.' };
     }
     return { ok: true, perfil: perfil as PerfilUsuario };
@@ -176,7 +190,10 @@ export async function crearDepartamento(actor: PerfilUsuario, nombre: string): P
       .insert({ sede_id: actor.sede_id, nombre: clean })
       .select()
       .single();
-    if (error) return buildErrorResult('ERR-004', error.message, 409);
+    if (error) {
+      console.error('[adapter:crearDepartamento]', error);
+      return buildErrorResult('ERR-004', 'No fue posible registrar el departamento en la sede.', 409);
+    }
     return { ok: true, http_status: 201, data: { departamento: data } };
   }
   return getLocalEngine().crearDepartamento(actor, nombre);
@@ -207,7 +224,10 @@ export async function crearProyecto(
       })
       .select()
       .single();
-    if (error) return buildErrorResult('ERR-001', error.message, 403);
+    if (error) {
+      console.error('[adapter:crearProyecto]', error);
+      return buildErrorResult('ERR-001', 'No fue posible crear el proyecto en la sede actual.', 403);
+    }
     return { ok: true, http_status: 201, data: { proyecto: data } };
   }
   return getLocalEngine().crearProyecto(actor, input);
@@ -275,7 +295,10 @@ export async function crearTarea(
       p_alcance: input.alcance,
       p_fecha_limite: input.fecha_limite,
     });
-    if (error) return buildErrorResult('ERR-005', error.message, 500);
+    if (error) {
+      console.error('[adapter:crearTarea]', error);
+      return buildErrorResult('ERR-005', 'Error al procesar la creación de la tarea.', 500);
+    }
     return normalizeRpcResponse(data);
   }
   return getLocalEngine().crearTarea(actor, input);
@@ -295,7 +318,10 @@ export async function actualizarAvanceTarea(
       p_estado: estado,
       p_porcentaje_avance: porcentajeAvance,
     });
-    if (error) return buildErrorResult('ERR-005', error.message, 500);
+    if (error) {
+      console.error('[adapter:actualizarAvanceTarea]', error);
+      return buildErrorResult('ERR-005', 'Error al actualizar el avance de la tarea.', 500);
+    }
     return normalizeRpcResponse(data);
   }
   return getLocalEngine().actualizarAvanceTarea(actor, tareaId, estado, porcentajeAvance);
@@ -321,9 +347,12 @@ export async function actualizarTareaGerencia(
       p_fecha_limite: input.fecha_limite ?? null,
       p_estado: input.estado ?? null,
       p_motivo_cambio: input.motivo_cambio ?? null,
-      p_diferir_invalidacion_cp004: Boolean(input.diferir_invalidacion_cp004),
+      p_diferir_invalidacion_cp004: Boolean(input.diferir_invalidacion_cp004 && isDemoToolsEnabled()),
     });
-    if (error) return buildErrorResult('ERR-005', error.message, 500);
+    if (error) {
+      console.error('[adapter:actualizarTareaGerencia]', error);
+      return buildErrorResult('ERR-005', 'Error al actualizar la tarea en el servidor.', 500);
+    }
     return normalizeRpcResponse(data);
   }
   return getLocalEngine().actualizarTareaGerencia(actor, tareaId, input);
@@ -394,7 +423,10 @@ export async function crearSolicitudAutorizacion(
       p_fecha_propuesta: input.fecha_propuesta ?? null,
       p_alcance_propuesto: input.alcance_propuesto ?? null,
     });
-    if (error) return buildErrorResult('ERR-005', error.message, 500);
+    if (error) {
+      console.error('[adapter:crearSolicitudAutorizacion]', error);
+      return buildErrorResult('ERR-005', 'Error al registrar la solicitud de autorización.', 500);
+    }
     return normalizeRpcResponse(data);
   }
   return getLocalEngine().crearSolicitudAutorizacion(actor, input);
@@ -418,10 +450,11 @@ export async function resolverSolicitudAutorizacion(
       p_dictamen: input.dictamen,
       p_motivo_resolucion: input.motivo_resolucion,
       p_idempotency_key: input.idempotency_key,
-      p_simular_fallo_bitacora: Boolean(input.simular_fallo_bitacora),
+      p_simular_fallo_bitacora: Boolean(input.simular_fallo_bitacora && isDemoToolsEnabled()),
     });
     if (error) {
-      return buildErrorResult('ERR-005', `${error.message} Se ejecutó ROLLBACK total.`, 500);
+      console.error('[adapter:resolverSolicitudAutorizacion]', error);
+      return buildErrorResult('ERR-005', 'ERR-005: Fallo en escritura de bitácora. Se ejecutó ROLLBACK total.', 500);
     }
     return normalizeRpcResponse(data);
   }
@@ -520,7 +553,10 @@ export async function verificarHashDocumento(
       p_nombre_documento: nombreDocumento,
       p_hash_sha256: hashSha256,
     });
-    if (error) return buildErrorResult('ERR-005', error.message, 500);
+    if (error) {
+      console.error('[adapter:verificarHashDocumento]', error);
+      return buildErrorResult('ERR-005', 'Error al verificar el hash del documento.', 500);
+    }
     return normalizeRpcResponse(data);
   }
   return getLocalEngine().verificarHashDocumento(actor, tareaId, nombreDocumento, hashSha256);
@@ -549,7 +585,10 @@ export async function registrarVersionDocumento(
     const { error: upErr } = await supabase.storage
       .from('documentos-tareas')
       .upload(storagePath, input.fileBuffer, { contentType: input.mime_type, upsert: false });
-    if (upErr) return buildErrorResult('ERR-001', upErr.message, 403);
+    if (upErr) {
+      console.error('[adapter:registrarVersionDocumento:storage]', upErr);
+      return buildErrorResult('ERR-001', 'No tiene permisos para cargar documentos en esta tarea.', 403);
+    }
 
     const { data, error } = await supabase.rpc('registrar_version_documento', {
       p_tarea_id: input.tarea_id,
@@ -564,7 +603,7 @@ export async function registrarVersionDocumento(
     if (error) {
       console.error('[adapter:registrarVersionDocumento:rpc]', error);
       await supabase.storage.from('documentos-tareas').remove([storagePath]).catch(() => null);
-      return buildErrorResult('ERR-005', error.message, 500);
+      return buildErrorResult('ERR-005', 'Error al registrar la versión del documento.', 500);
     }
     const normalized = normalizeRpcResponse(data);
     if (!normalized.ok) {
@@ -580,7 +619,10 @@ export async function designarVersionVigente(actor: PerfilUsuario, versionId: st
     const supabase = await createSupabaseServerClient();
     if (!supabase) return buildErrorResult('ERR-005', 'Cliente Supabase no disponible.', 500);
     const { data, error } = await supabase.rpc('designar_version_vigente', { p_version_id: versionId });
-    if (error) return buildErrorResult('ERR-005', error.message, 500);
+    if (error) {
+      console.error('[adapter:designarVersionVigente]', error);
+      return buildErrorResult('ERR-005', 'Error al designar la versión oficial vigente.', 500);
+    }
     return normalizeRpcResponse(data);
   }
   return getLocalEngine().designarVersionVigente(actor, versionId);
@@ -599,13 +641,13 @@ export async function getArchivoVersion(
     if (!supabase) return buildErrorResult('ERR-005', 'Cliente Supabase no disponible.', 500);
     const { data: ver } = await supabase
       .from('documento_versiones')
-      .select('archivo_path')
+      .select('archivo_path, nombre_original')
       .eq('id', versionId)
       .maybeSingle();
     if (!ver) return buildErrorResult('ERR-001', 'Versión no encontrada o sin acceso.', 403);
     const { data: signed, error } = await supabase.storage
       .from('documentos-tareas')
-      .createSignedUrl(ver.archivo_path, 60);
+      .createSignedUrl(ver.archivo_path, 60, { download: ver.nombre_original || true });
     if (error || !signed) return buildErrorResult('ERR-001', 'No fue posible generar URL firmada.', 403);
     return { ok: true, signedUrl: signed.signedUrl };
   }
@@ -646,7 +688,10 @@ export async function evaluarRecordatoriosSimulados(
     const { data, error } = await supabase.rpc('evaluar_recordatorios_simulados', {
       p_fecha_evaluacion: fechaEvaluacionIso ?? new Date().toISOString(),
     });
-    if (error) return buildErrorResult('ERR-005', error.message, 500);
+    if (error) {
+      console.error('[adapter:verificarHashDocumento]', error);
+      return buildErrorResult('ERR-005', 'Error al verificar el hash del documento.', 500);
+    }
     return normalizeRpcResponse(data);
   }
   return getLocalEngine().evaluarRecordatoriosSimulados(actor, fechaEvaluacionIso);

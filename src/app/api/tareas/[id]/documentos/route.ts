@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server';
 import { listDocumentosTarea, registrarVersionDocumento } from '@/lib/backend/adapter';
-import { jsonFromApiResult, requireActor } from '@/lib/backend/http';
+import { invalidUuidResponse, jsonFromApiResult, requireActor } from '@/lib/backend/http';
+import { checkActorRateLimit } from '@/lib/security/rateLimit';
+import { exceedsMaxLength, isValidUuid, validateSafeDocumentUpload } from '@/lib/security/validation';
 
 export async function GET(_req: Request, context: { params: { id: string } }) {
   const auth = await requireActor();
   if (!auth.ok) return auth.response;
+  if (!isValidUuid(context.params.id)) return invalidUuidResponse('tarea_id');
 
   const docs = await listDocumentosTarea(auth.actor, context.params.id);
   if (docs === null) {
@@ -17,8 +20,17 @@ export async function GET(_req: Request, context: { params: { id: string } }) {
 }
 
 export async function POST(req: Request, context: { params: { id: string } }) {
-  const auth = await requireActor();
+  const auth = await requireActor(req);
   if (!auth.ok) return auth.response;
+  if (!isValidUuid(context.params.id)) return invalidUuidResponse('tarea_id');
+
+  const rl = checkActorRateLimit(auth.actor.id, 'upload_doc', 30, 60_000);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { ok: false, error_code: 'ERR-001', message: `Límite de carga excedido. Espere ${rl.retryAfterSec} segundos.` },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfterSec) } }
+    );
+  }
 
   const formData = await req.formData().catch(() => null);
   if (!formData) {
@@ -32,9 +44,28 @@ export async function POST(req: Request, context: { params: { id: string } }) {
   const nombreDocumento = String(formData.get('nombre_documento') ?? '');
   const descripcionCambio = String(formData.get('descripcion_cambio') ?? '');
 
+  if (exceedsMaxLength(nombreDocumento, 200) || exceedsMaxLength(descripcionCambio, 2000)) {
+    return NextResponse.json(
+      { ok: false, error_code: 'ERR-002', message: 'Nombre o descripción del cambio exceden la longitud máxima.' },
+      { status: 422 }
+    );
+  }
+
   if (!(file instanceof File)) {
     return NextResponse.json(
       { ok: false, error_code: 'ERR-002', message: 'Debe adjuntar un archivo válido.' },
+      { status: 422 }
+    );
+  }
+
+  const fileCheck = validateSafeDocumentUpload({
+    name: file.name || 'documento.bin',
+    type: file.type || 'application/octet-stream',
+    size: file.size,
+  });
+  if (!fileCheck.ok) {
+    return NextResponse.json(
+      { ok: false, error_code: 'ERR-002', message: fileCheck.message },
       { status: 422 }
     );
   }

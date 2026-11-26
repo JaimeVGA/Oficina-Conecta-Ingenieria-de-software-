@@ -1,4 +1,5 @@
 import type { AvatarPreset } from '@/components/preferences/PreferencesProvider';
+import { isSafeAvatarDataUrl } from '@/lib/security/validation';
 
 const PRESET_CLASSES: Record<AvatarPreset, string> = {
   ocean: 'bg-sky-600 text-white',
@@ -30,7 +31,7 @@ export function UserAvatar({
   const sizeClass =
     size === 'sm' ? 'w-8 h-8 text-xs' : size === 'lg' ? 'w-20 h-20 text-2xl' : 'w-11 h-11 text-sm';
 
-  if (avatarDataUrl) {
+  if (isSafeAvatarDataUrl(avatarDataUrl)) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img

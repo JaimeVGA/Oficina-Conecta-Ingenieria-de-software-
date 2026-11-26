@@ -102,6 +102,10 @@ export function PreferenciasClient({
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
+      setSavedNotice('Solo se permiten imágenes PNG, JPEG o WebP.');
+      return;
+    }
     if (file.size > 1_500_000) {
       setSavedNotice('La foto de perfil debe pesar máximo 1.5 MB.');
       return;

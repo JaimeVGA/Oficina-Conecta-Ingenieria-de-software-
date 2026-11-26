@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { filterTasksByQuery, listTareas } from '@/lib/backend/adapter';
-import { requireActor } from '@/lib/backend/http';
+import { invalidUuidResponse, requireActor } from '@/lib/backend/http';
 import { generateIcsCalendar } from '@/lib/ics/generator';
+import { isValidUuid } from '@/lib/security/validation';
 import type { SedeId } from '@/lib/supabase/types';
 
 export async function GET(req: Request) {
@@ -12,6 +13,9 @@ export async function GET(req: Request) {
   const sedeParam = searchParams.get('sede_id') as SedeId | null;
   const proyectoParam = searchParams.get('proyecto_id');
   const tareaParam = searchParams.get('tarea_id');
+
+  if (proyectoParam && !isValidUuid(proyectoParam)) return invalidUuidResponse('proyecto_id');
+  if (tareaParam && !isValidUuid(tareaParam)) return invalidUuidResponse('tarea_id');
 
   const all = await listTareas(auth.actor);
   const filtered = filterTasksByQuery(all, {
@@ -39,6 +43,7 @@ export async function GET(req: Request) {
     status: 200,
     headers: {
       'Content-Type': 'text/calendar; charset=utf-8',
+      'X-Content-Type-Options': 'nosniff',
       'Content-Disposition': `attachment; filename="${fileName}"`,
       'Cache-Control': 'no-store',
     },

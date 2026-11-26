@@ -91,3 +91,6 @@ $RECYCLE.BIN/
 *~
 .directory
 .Trash-*
+
+.vercel
+.env*

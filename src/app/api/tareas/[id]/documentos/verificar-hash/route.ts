@@ -1,9 +1,11 @@
 import { verificarHashDocumento } from '@/lib/backend/adapter';
-import { jsonFromApiResult, requireActor } from '@/lib/backend/http';
+import { invalidUuidResponse, jsonFromApiResult, requireActor } from '@/lib/backend/http';
+import { isValidUuid } from '@/lib/security/validation';
 
 export async function POST(req: Request, context: { params: { id: string } }) {
-  const auth = await requireActor();
+  const auth = await requireActor(req);
   if (!auth.ok) return auth.response;
+  if (!isValidUuid(context.params.id)) return invalidUuidResponse('tarea_id');
 
   const body = (await req.json().catch(() => ({}))) as {
     nombre_documento?: string;

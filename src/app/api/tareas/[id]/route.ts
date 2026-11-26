@@ -4,12 +4,14 @@ import {
   actualizarTareaGerencia,
   getTareaById,
 } from '@/lib/backend/adapter';
-import { jsonFromApiResult, requireActor } from '@/lib/backend/http';
+import { invalidUuidResponse, jsonFromApiResult, requireActor } from '@/lib/backend/http';
+import { exceedsMaxLength, isValidUuid } from '@/lib/security/validation';
 import type { EstadoTarea } from '@/lib/supabase/types';
 
 export async function GET(_req: Request, context: { params: { id: string } }) {
   const auth = await requireActor();
   if (!auth.ok) return auth.response;
+  if (!isValidUuid(context.params.id)) return invalidUuidResponse('tarea_id');
 
   const tarea = await getTareaById(auth.actor, context.params.id);
   if (!tarea) {
@@ -22,8 +24,9 @@ export async function GET(_req: Request, context: { params: { id: string } }) {
 }
 
 export async function PATCH(req: Request, context: { params: { id: string } }) {
-  const auth = await requireActor();
+  const auth = await requireActor(req);
   if (!auth.ok) return auth.response;
+  if (!isValidUuid(context.params.id)) return invalidUuidResponse('tarea_id');
 
   const body = (await req.json().catch(() => ({}))) as {
     modo?: 'avance' | 'gerencia';
@@ -34,6 +37,13 @@ export async function PATCH(req: Request, context: { params: { id: string } }) {
     motivo_cambio?: string;
     diferir_invalidacion_cp004?: boolean;
   };
+
+  if (exceedsMaxLength(body.titulo, 300) || exceedsMaxLength(body.motivo_cambio, 2000)) {
+    return NextResponse.json(
+      { ok: false, error_code: 'ERR-002', message: 'Título o motivo exceden la longitud máxima permitida.' },
+      { status: 422 }
+    );
+  }
 
   if (auth.actor.rol === 'DN') {
     return NextResponse.json(

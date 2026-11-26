@@ -61,8 +61,9 @@ function LoginContent() {
   const reason = searchParams.get('reason');
   const demoTools = process.env.NEXT_PUBLIC_ENABLE_DEMO_TOOLS !== 'false';
 
-  const [email, setEmail] = useState('carlos.mendez@oficinaconecta.mx');
-  const [password, setPassword] = useState('OficinaConecta2026!');
+  const [email, setEmail] = useState(demoTools ? 'carlos.mendez@oficinaconecta.mx' : '');
+  const [password, setPassword] = useState(demoTools ? 'OficinaConecta2026!' : '');
+  const [showDemoPass, setShowDemoPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -92,7 +93,11 @@ function LoginContent() {
 
   return (
     <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
-      <div className="max-w-4xl w-full grid md:grid-cols-2 bg-white rounded-2xl shadow-2xl overflow-hidden">
+      <div
+        className={`w-full bg-white rounded-2xl shadow-2xl overflow-hidden ${
+          demoTools ? 'max-w-4xl grid md:grid-cols-2' : 'max-w-md'
+        }`}
+      >
         <div className="p-8 space-y-6">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-brand-600 text-white font-bold flex items-center justify-center">
@@ -182,14 +187,14 @@ function LoginContent() {
           </div>
         </div>
 
-        <div className="bg-slate-50 p-6 border-t md:border-t-0 md:border-l border-slate-200 flex flex-col justify-between">
-          <div>
-            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-1.5">
-              <Building2 className="w-4 h-4" />
-              {demoTools ? 'Cuentas Piloto para Demostración' : 'Roles del Sistema'}
-            </h2>
+        {demoTools && (
+          <div className="bg-slate-50 p-6 border-t md:border-t-0 md:border-l border-slate-200 flex flex-col justify-between">
+            <div>
+              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-1.5">
+                <Building2 className="w-4 h-4" />
+                Cuentas Piloto para Demostración
+              </h2>
 
-            {demoTools && (
               <div className="space-y-1.5">
                 {DEMO_ACCOUNTS.map((acc) => (
                   <button
@@ -217,13 +222,24 @@ function LoginContent() {
                   </button>
                 ))}
               </div>
-            )}
-          </div>
+            </div>
 
-          <p className="mt-4 text-[11px] text-slate-500">
-            Contraseña de cuentas piloto: <code className="bg-slate-200 px-1.5 py-0.5 rounded">OficinaConecta2026!</code>
-          </p>
-        </div>
+            <div className="mt-4 text-[11px] text-slate-500 flex items-center justify-between gap-2">
+              <span>Contraseña piloto:</span>
+              {showDemoPass ? (
+                <code className="bg-slate-200 px-1.5 py-0.5 rounded">OficinaConecta2026!</code>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setShowDemoPass(true)}
+                  className="text-brand-600 font-semibold hover:underline"
+                >
+                  Mostrar clave demo
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

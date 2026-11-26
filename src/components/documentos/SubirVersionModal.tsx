@@ -132,7 +132,13 @@ export function SubirVersionModal({
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">Archivo (máx. 50 MB)</label>
-            <input type="file" required onChange={handleFileChange} className="w-full text-xs text-slate-600" />
+            <input
+              type="file"
+              required
+              accept=".pdf,.txt,.csv,.md,.json,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.png,.jpg,.jpeg,.webp,.zip,.ics"
+              onChange={handleFileChange}
+              className="w-full text-xs text-slate-600"
+            />
             {hashPreview && (
               <p className="mt-1 font-mono text-[10px] text-slate-500 break-all">SHA-256: {hashPreview}</p>
             )}
