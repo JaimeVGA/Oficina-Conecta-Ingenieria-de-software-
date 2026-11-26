@@ -135,7 +135,7 @@ export function SessionInactivityGuard({
     >
       {/* Desmontaje inmediato de vistas/formularios al expirar (CP-003) */}
       {timer.isExpired ? (
-        <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white p-6">
+        <div className="min-h-[100dvh] flex items-center justify-center bg-slate-900 text-white p-4 sm:p-6">
           <div className="max-w-md w-full bg-slate-800 border border-slate-700 rounded-xl p-6 text-center space-y-4">
             <LogOut className="w-10 h-10 text-red-400 mx-auto" />
             <h2 className="text-lg font-semibold">Sesión expirada por inactividad</h2>
@@ -193,7 +193,7 @@ export function SessionInactivityGuard({
                   <button
                     type="button"
                     onClick={timer.registerActivity}
-                    className="px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium"
+                    className="w-full sm:w-auto min-h-[42px] px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium"
                   >
                     Continuar sesión activa
                   </button>
@@ -214,7 +214,7 @@ export function NetworkStatusBanner() {
     return (
       <div
         role="alert"
-        className="bg-red-600 text-white px-4 py-2 text-xs sm:text-sm font-medium flex items-center justify-center gap-2"
+        className="bg-red-600 text-white px-4 py-2 text-xs sm:text-sm font-medium flex items-center justify-center gap-2 break-words"
       >
         <WifiOff className="w-4 h-4 shrink-0" />
         <span>

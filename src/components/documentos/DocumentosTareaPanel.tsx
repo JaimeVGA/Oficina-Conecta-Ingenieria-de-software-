@@ -57,7 +57,7 @@ export function DocumentosTareaPanel({
           <button
             type="button"
             onClick={() => setUploadDocName('')}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold"
+            className="w-full sm:w-auto justify-center min-h-[40px] inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold"
           >
             <FileUp className="w-4 h-4" />
             Subir Documento / Revisión
@@ -122,17 +122,17 @@ export function DocumentosTareaPanel({
                           </span>
                         )}
                       </div>
-                      <p className="text-slate-600">{v.descripcion_cambio}</p>
-                      <p className="text-[11px] text-slate-400 font-mono">
+                      <p className="text-slate-600 break-words">{v.descripcion_cambio}</p>
+                      <p className="text-[11px] text-slate-400 font-mono break-all">
                         Autor: {v.autor_nombre ?? v.autor_id} · {formatMexicoCityDateTime(v.creado_en)} · SHA-256:{' '}
                         {v.hash_sha256.slice(0, 16)}...
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="w-full sm:w-auto flex flex-wrap items-center gap-2 shrink-0">
                       <a
                         href={`/api/documentos/versiones/${v.id}/descarga`}
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-medium"
+                        className="flex-1 sm:flex-initial justify-center min-h-[38px] inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-medium"
                       >
                         <Download className="w-3.5 h-3.5" /> Descargar
                       </a>
@@ -143,7 +143,7 @@ export function DocumentosTareaPanel({
                             type="button"
                             disabled={busyVersionId === v.id}
                             onClick={() => handleSetVigente(v.id)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
+                            className="flex-1 sm:flex-initial justify-center min-h-[38px] inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
                           >
                             <Award className="w-3.5 h-3.5" />
                             {busyVersionId === v.id ? 'Aplicando...' : 'Marcar Oficial / Vigente'}

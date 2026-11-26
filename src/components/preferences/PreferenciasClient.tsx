@@ -172,11 +172,11 @@ export function PreferenciasClient({
       )}
 
       {/* Pestañas de Preferencias */}
-      <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-3">
+      <div className="flex overflow-x-auto no-scrollbar pb-3 -mx-1 px-1 sm:flex-wrap gap-2 border-b border-slate-200">
         <button
           type="button"
           onClick={() => setActiveTab('usuario')}
-          className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-colors ${
+          className={`whitespace-nowrap shrink-0 min-h-[40px] inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-colors ${
             activeTab === 'usuario'
               ? 'bg-brand-600 text-white'
               : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
@@ -188,7 +188,7 @@ export function PreferenciasClient({
         <button
           type="button"
           onClick={() => setActiveTab('temas')}
-          className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-colors ${
+          className={`whitespace-nowrap shrink-0 min-h-[40px] inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-colors ${
             activeTab === 'temas'
               ? 'bg-brand-600 text-white'
               : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
@@ -200,7 +200,7 @@ export function PreferenciasClient({
         <button
           type="button"
           onClick={() => setActiveTab('idioma')}
-          className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-colors ${
+          className={`whitespace-nowrap shrink-0 min-h-[40px] inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-colors ${
             activeTab === 'idioma'
               ? 'bg-brand-600 text-white'
               : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
@@ -241,8 +241,8 @@ export function PreferenciasClient({
               </div>
 
               {/* Controles de Foto / Avatar */}
-              <div className="flex flex-wrap items-center gap-2">
-                <label className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold cursor-pointer">
+              <div className="w-full sm:w-auto flex flex-wrap items-center gap-2">
+                <label className="flex-1 sm:flex-initial justify-center min-h-[40px] inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold cursor-pointer">
                   <Camera className="w-3.5 h-3.5" />
                   <span>{t.prefs.uploadPhoto}</span>
                   <input type="file" accept="image/png,image/jpeg,image/webp" onChange={handlePhotoUpload} className="hidden" />
@@ -255,7 +255,7 @@ export function PreferenciasClient({
                       updateUserCustomization(actor.id, { avatarDataUrl: null }, actor.rol, actorDepto);
                       showSaved('Foto eliminada.');
                     }}
-                    className="inline-flex items-center gap-1 px-3 py-2 rounded-lg border border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                    className="flex-1 sm:flex-initial justify-center min-h-[40px] inline-flex items-center gap-1 px-3 py-2 rounded-lg border border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-50"
                   >
                     <Trash2 className="w-3.5 h-3.5" /> {t.prefs.removePhoto}
                   </button>
@@ -297,7 +297,7 @@ export function PreferenciasClient({
 
               <div className="bg-slate-50 border border-slate-200 rounded-lg p-3.5 space-y-1">
                 <p className="text-[11px] font-semibold text-slate-500 uppercase">{t.prefs.fieldEmail}</p>
-                <p className="text-sm font-mono text-slate-900">{actor.correo}</p>
+                <p className="text-sm font-mono text-slate-900 break-all">{actor.correo}</p>
               </div>
 
               <div className="bg-slate-50 border border-slate-200 rounded-lg p-3.5 space-y-1">
@@ -350,7 +350,7 @@ export function PreferenciasClient({
               <div className="md:col-span-2 flex justify-end">
                 <button
                   type="submit"
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold"
+                  className="w-full sm:w-auto justify-center min-h-[42px] inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold"
                 >
                   <Check className="w-4 h-4" /> {t.prefs.saveProfileBtn}
                 </button>

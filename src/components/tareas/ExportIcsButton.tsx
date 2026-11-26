@@ -47,7 +47,7 @@ export function ExportIcsButton({
       </button>
 
       {showHint && (
-        <div className="absolute right-0 top-full mt-2 w-80 z-30 bg-slate-900 text-slate-100 text-xs rounded-xl p-3.5 shadow-xl space-y-1.5">
+        <div className="fixed inset-x-4 bottom-24 sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 sm:w-80 z-40 bg-slate-900 text-slate-100 text-xs rounded-xl p-3.5 shadow-xl space-y-1.5">
           <p className="font-bold text-white">Actualización sin duplicados (RFC 5545)</p>
           <p>
             Cada evento usa <code>UID:tarea-&#123;id&#125;@oficinaconecta.mx</code> y <code>SEQUENCE</code> incremental.

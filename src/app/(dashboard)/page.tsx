@@ -55,11 +55,11 @@ export default async function DashboardHomePage() {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="w-full sm:w-auto flex flex-wrap items-center gap-2">
           <ExportIcsButton label="Exportar Calendario (.ics)" />
           <Link
             href="/tareas"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold"
+            className="flex-1 sm:flex-initial min-h-[40px] inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold"
           >
             Ver Tareas <ArrowRight className="w-3.5 h-3.5" />
           </Link>
@@ -67,7 +67,7 @@ export default async function DashboardHomePage() {
       </div>
 
       {/* KPIs Consolidados */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         <div className="bg-white border border-slate-200 rounded-xl p-4">
           <p className="text-xs font-medium text-slate-500 flex items-center gap-1.5">
             <ClipboardList className="w-4 h-4 text-brand-600" /> Tareas Visibles
@@ -90,7 +90,7 @@ export default async function DashboardHomePage() {
           </p>
           <p className="text-2xl font-bold text-indigo-700 mt-1">{solPendientes}</p>
         </div>
-        <div className="bg-white border border-slate-200 rounded-xl p-4">
+        <div className="col-span-2 sm:col-span-1 bg-white border border-slate-200 rounded-xl p-4">
           <p className="text-xs font-medium text-slate-500 flex items-center gap-1.5">
             <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Completadas
           </p>

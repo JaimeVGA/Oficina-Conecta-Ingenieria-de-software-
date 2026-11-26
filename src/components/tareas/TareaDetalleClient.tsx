@@ -76,13 +76,13 @@ export function TareaDetalleClient({
           <ArrowLeft className="w-4 h-4" /> Volver a tareas
         </Link>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="w-full sm:w-auto flex flex-wrap items-center gap-2">
           <ExportIcsButton tareaId={tarea.id} label={`Exportar .ics (seq ${tarea.sequence_ics})`} />
           {actor.rol === 'GS' && (
             <button
               type="button"
               onClick={() => setShowEditarGsModal(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-800"
+              className="flex-1 sm:flex-initial justify-center min-h-[40px] inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-800"
             >
               <CalendarCog className="w-4 h-4 text-brand-600" /> Administrar Tarea (GS)
             </button>
@@ -91,7 +91,7 @@ export function TareaDetalleClient({
             <button
               type="button"
               onClick={() => setShowSolicitudModal(true)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold"
+              className="w-full sm:w-auto justify-center min-h-[40px] inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold"
             >
               <FileCheck2 className="w-4 h-4" /> Solicitar Prórroga / Cambio de Alcance
             </button>
@@ -114,8 +114,8 @@ export function TareaDetalleClient({
                 ICS SEQUENCE:{tarea.sequence_ics}
               </span>
             </div>
-            <h1 className="text-xl font-bold text-slate-900 mt-2">{tarea.titulo}</h1>
-            <p className="text-sm text-slate-600 mt-1">{tarea.alcance}</p>
+            <h1 className="text-xl font-bold text-slate-900 mt-2 break-words">{tarea.titulo}</h1>
+            <p className="text-sm text-slate-600 mt-1 break-words">{tarea.alcance}</p>
           </div>
         </div>
 
@@ -226,10 +226,10 @@ export function TareaDetalleClient({
                   </span>
                   <span className="font-mono text-slate-500">{formatMexicoCityDateTime(b.resuelto_en, true)} MX</span>
                 </div>
-                <p className="text-slate-700">
+                <p className="text-slate-700 break-words">
                   <strong>Motivo:</strong> {b.motivo_resolucion}
                 </p>
-                <p className="font-mono text-[11px] text-slate-600">
+                <p className="font-mono text-[11px] text-slate-600 break-words">
                   {b.valor_anterior} → {b.valor_nuevo}
                 </p>
               </div>

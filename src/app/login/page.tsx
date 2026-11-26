@@ -92,13 +92,13 @@ function LoginContent() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+    <div className="min-h-[100dvh] bg-slate-900 flex items-center justify-center p-3 sm:p-4">
       <div
         className={`w-full bg-white rounded-2xl shadow-2xl overflow-hidden ${
           demoTools ? 'max-w-4xl grid md:grid-cols-2' : 'max-w-md'
         }`}
       >
-        <div className="p-8 space-y-6">
+        <div className="p-5 sm:p-8 space-y-6">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-brand-600 text-white font-bold flex items-center justify-center">
               OC
@@ -168,7 +168,7 @@ function LoginContent() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 px-4 rounded-lg bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white font-semibold text-sm flex items-center justify-center gap-2"
+              className="w-full min-h-[44px] py-2.5 px-4 rounded-lg bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white font-semibold text-sm flex items-center justify-center gap-2"
             >
               <LogIn className="w-4 h-4" />
               {loading ? 'Verificando sesión...' : 'Iniciar Sesión'}

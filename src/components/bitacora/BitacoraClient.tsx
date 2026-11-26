@@ -34,18 +34,18 @@ export function BitacoraClient({ registros }: { registros: BitacoraEnriquecida[]
         </div>
 
         {demoTools && (
-          <div className="flex items-center gap-2">
+          <div className="w-full sm:w-auto flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={() => runCp001Probe('PUT')}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-rose-300 bg-rose-50 hover:bg-rose-100 text-rose-900 text-xs font-semibold"
+              className="flex-1 sm:flex-initial justify-center min-h-[40px] inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-rose-300 bg-rose-50 hover:bg-rose-100 text-rose-900 text-xs font-semibold"
             >
               <Lock className="w-3.5 h-3.5" /> Probar PUT directo (CP-001)
             </button>
             <button
               type="button"
               onClick={() => runCp001Probe('DELETE')}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-rose-300 bg-rose-50 hover:bg-rose-100 text-rose-900 text-xs font-semibold"
+              className="flex-1 sm:flex-initial justify-center min-h-[40px] inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-rose-300 bg-rose-50 hover:bg-rose-100 text-rose-900 text-xs font-semibold"
             >
               <Lock className="w-3.5 h-3.5" /> Probar DELETE directo (CP-001)
             </button>
@@ -56,13 +56,61 @@ export function BitacoraClient({ registros }: { registros: BitacoraEnriquecida[]
       {cp001Result && (
         <div
           role="status"
-          className="bg-slate-900 text-emerald-300 font-mono text-xs rounded-xl p-4 border border-slate-700"
+          className="bg-slate-900 text-emerald-300 font-mono text-xs rounded-xl p-4 border border-slate-700 break-words overflow-x-auto"
         >
           Respuesta del servidor ante intento de alteración: {cp001Result}
         </div>
       )}
 
-      <div className="bg-white border border-slate-200 rounded-xl overflow-x-auto">
+      {/* Tarjetas de Bitácora (Móvil) */}
+      <div className="md:hidden space-y-3">
+        {registros.length === 0 ? (
+          <div className="bg-white border border-slate-200 rounded-xl p-6 text-center text-xs text-slate-500">
+            No existen registros en bitácora dentro de su alcance.
+          </div>
+        ) : (
+          registros.map((r) => (
+            <article key={r.id} className="bg-white border border-slate-200 rounded-xl p-4 space-y-2.5 text-xs">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span
+                    className={`px-2 py-0.5 rounded font-mono font-semibold ${
+                      r.dictamen === 'APROBADA' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                    }`}
+                  >
+                    {r.dictamen}
+                  </span>
+                  <span className="font-mono font-semibold text-slate-900">{r.solicitud_folio}</span>
+                </div>
+                <span className="font-mono text-[11px] text-slate-500">
+                  {formatMexicoCityDateTime(r.resuelto_en, true)}
+                </span>
+              </div>
+
+              <div>
+                <p className="font-semibold text-slate-900">
+                  {r.tarea_folio} · {r.sede_nombre}
+                </p>
+                <p className="text-slate-600">
+                  Resolutor: {r.resolutor_nombre_snapshot} ({r.resolutor_rol_snapshot}) · {r.solicitud_tipo}
+                </p>
+              </div>
+
+              <p className="text-slate-700 break-words">
+                <strong>Motivo:</strong> {r.motivo_resolucion}
+              </p>
+
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5 font-mono text-[11px] space-y-1">
+                <p className="text-slate-500 break-words">Antes: {r.valor_anterior}</p>
+                <p className="text-slate-900 font-semibold break-words">Nuevo: {r.valor_nuevo}</p>
+              </div>
+            </article>
+          ))
+        )}
+      </div>
+
+      {/* Tabla de Bitácora (Tablet y Escritorio) */}
+      <div className="hidden md:block bg-white border border-slate-200 rounded-xl overflow-x-auto">
         <table className="w-full text-left text-xs">
           <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase">
             <tr>

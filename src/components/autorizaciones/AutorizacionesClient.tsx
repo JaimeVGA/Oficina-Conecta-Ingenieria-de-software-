@@ -43,7 +43,7 @@ export function AutorizacionesClient({
       </div>
 
       {/* Tabs de estado */}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex overflow-x-auto no-scrollbar pb-1 -mx-1 px-1 sm:flex-wrap gap-2">
         {(
           [
             'TODAS',
@@ -57,7 +57,7 @@ export function AutorizacionesClient({
             key={est}
             type="button"
             onClick={() => setFilterEstado(est)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold border ${
+            className={`whitespace-nowrap shrink-0 min-h-[38px] px-3 py-1.5 rounded-lg text-xs font-semibold border ${
               filterEstado === est
                 ? 'bg-slate-900 text-white border-slate-900'
                 : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
@@ -93,7 +93,7 @@ export function AutorizacionesClient({
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="w-full sm:w-auto flex flex-wrap items-center justify-between sm:justify-end gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
                     <Link
                       href={`/tareas/${s.tarea_id}`}
                       className="text-xs font-semibold text-slate-600 hover:underline"

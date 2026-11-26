@@ -59,11 +59,11 @@ export function SimularTiempoPanel({
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full lg:w-auto">
           <select
             value={adelantarHoras}
             onChange={(e) => setAdelantarHoras(Number(e.target.value))}
-            className="px-3 py-2 rounded-lg border border-slate-300 text-xs bg-white font-medium"
+            className="w-full sm:w-auto min-h-[42px] px-3 py-2 rounded-lg border border-slate-300 text-xs bg-white font-medium"
           >
             <option value={0}>Hora actual (0h)</option>
             <option value={25}>Adelantar +25 horas</option>
@@ -76,10 +76,17 @@ export function SimularTiempoPanel({
             type="button"
             disabled={busy}
             onClick={() => runEvaluation(adelantarHoras)}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white text-xs font-semibold"
+            className="w-full sm:w-auto justify-center text-center min-h-[42px] inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white text-xs font-semibold"
           >
-            <FastForward className="w-4 h-4" />
-            {busy ? 'Evaluando...' : 'Simular paso del tiempo / Evaluar recordatorios (48h/24h)'}
+            <FastForward className="w-4 h-4 shrink-0" />
+            {busy ? (
+              'Evaluando...'
+            ) : (
+              <>
+                <span className="sm:hidden">Simular tiempo / Evaluar (48h/24h)</span>
+                <span className="hidden sm:inline">Simular paso del tiempo / Evaluar recordatorios (48h/24h)</span>
+              </>
+            )}
           </button>
         </div>
       </div>

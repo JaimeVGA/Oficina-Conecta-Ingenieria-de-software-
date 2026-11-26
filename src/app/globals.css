@@ -6,11 +6,42 @@
   color-scheme: light;
 }
 
+html,
+body {
+  overflow-x: clip;
+  scroll-padding-block-start: 4.25rem;
+}
+
 body {
   background-color: #f8fafc;
   color: #0f172a;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Prevenir auto-zoom en iOS/Android al enfocar campos de formulario */
+@media (max-width: 639px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+@media (pointer: coarse) {
+  button,
+  [role="button"] {
+    min-height: 36px;
+  }
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
 /* --------------------------------------------------------------------------
@@ -157,6 +188,16 @@ html[data-density="compact"] main {
 
 html[data-density="comfortable"] main {
   line-height: 1.65;
+}
+
+html[data-theme="dark"] .mobile-bottom-nav {
+  background-color: rgba(17, 24, 39, 0.96) !important;
+  border-color: #1e293b !important;
+}
+
+html[data-theme="midnight"] .mobile-bottom-nav {
+  background-color: rgba(15, 33, 60, 0.96) !important;
+  border-color: #1e3a5f !important;
 }
 
 /* Fin de estilos globales y temas de Oficina Conecta */

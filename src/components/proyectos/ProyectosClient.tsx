@@ -107,18 +107,18 @@ export function ProyectosClient({
           </h2>
 
           {canManage && (
-            <form onSubmit={handleCreateDepto} className="flex items-center gap-2">
+            <form onSubmit={handleCreateDepto} className="w-full sm:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
               <input
                 type="text"
                 required
                 value={newDeptoName}
                 onChange={(e) => setNewDeptoName(e.target.value)}
                 placeholder="Nuevo departamento en mi sede"
-                className="px-3 py-1.5 rounded-lg border border-slate-300 text-xs"
+                className="w-full sm:w-56 min-h-[40px] px-3 py-1.5 rounded-lg border border-slate-300 text-xs"
               />
               <button
                 type="submit"
-                className="px-3 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-semibold"
+                className="min-h-[40px] inline-flex items-center justify-center px-3 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-semibold"
               >
                 Agregar
               </button>
@@ -200,15 +200,46 @@ export function ProyectosClient({
 
           <button
             type="submit"
-            className="px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold"
+            className="w-full sm:w-auto min-h-[42px] px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold"
           >
             Guardar Proyecto
           </button>
         </form>
       )}
 
-      {/* Listado de Proyectos */}
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+      {/* Tarjetas de Proyectos (Móvil) */}
+      <div className="md:hidden space-y-3">
+        {proyectos.map((p) => {
+          const depto = departamentos.find((d) => d.id === p.departamento_id);
+          const sede = sedes.find((s) => s.id === p.sede_id);
+          return (
+            <article key={p.id} className="bg-white border border-slate-200 rounded-xl p-4 space-y-2.5">
+              <div className="flex items-start justify-between gap-2">
+                <h3 className="font-bold text-sm text-slate-900 break-words">{p.nombre}</h3>
+                <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[11px] font-semibold shrink-0">
+                  {p.estado}
+                </span>
+              </div>
+              {p.descripcion && <p className="text-xs text-slate-500 break-words">{p.descripcion}</p>}
+              <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 rounded-lg p-2.5">
+                <div>
+                  <p className="text-[11px] text-slate-500">Sede / Depto</p>
+                  <p className="font-medium text-slate-900 break-words">
+                    {sede?.nombre ?? p.sede_id} · {depto?.nombre ?? '-'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[11px] text-slate-500">Fecha Fin</p>
+                  <p className="font-mono font-semibold text-slate-900">{p.fecha_fin_proyecto}</p>
+                </div>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+
+      {/* Listado de Proyectos (Tablet y Escritorio) */}
+      <div className="hidden md:block bg-white border border-slate-200 rounded-xl overflow-x-auto">
         <table className="w-full text-left text-xs">
           <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase">
             <tr>
