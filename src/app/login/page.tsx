@@ -2,7 +2,17 @@
 
 import React, { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { AlertCircle, Building2, Lock, LogIn, ShieldCheck } from 'lucide-react';
+import {
+  AlertCircle,
+  Building2,
+  ChevronDown,
+  ChevronUp,
+  Eye,
+  EyeOff,
+  Lock,
+  LogIn,
+  ShieldCheck,
+} from 'lucide-react';
 
 const DEMO_ACCOUNTS = [
   {
@@ -63,7 +73,9 @@ function LoginContent() {
 
   const [email, setEmail] = useState(demoTools ? 'carlos.mendez@oficinaconecta.mx' : '');
   const [password, setPassword] = useState(demoTools ? 'OficinaConecta2026!' : '');
+  const [showPasswordInput, setShowPasswordInput] = useState(false);
   const [showDemoPass, setShowDemoPass] = useState(false);
+  const [showMobileAccounts, setShowMobileAccounts] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -92,18 +104,18 @@ function LoginContent() {
   };
 
   return (
-    <div className="min-h-[100dvh] bg-slate-900 flex items-center justify-center p-3 sm:p-4">
+    <div className="min-h-[100dvh] bg-slate-900 flex items-start md:items-center justify-center px-3 py-5 sm:p-6 pt-[max(1.25rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))]">
       <div
         className={`w-full bg-white rounded-2xl shadow-2xl overflow-hidden ${
-          demoTools ? 'max-w-4xl grid md:grid-cols-2' : 'max-w-md'
+          demoTools ? 'max-w-4xl grid grid-cols-1 md:grid-cols-2' : 'max-w-md'
         }`}
       >
-        <div className="p-5 sm:p-8 space-y-6">
+        <div className="min-w-0 p-5 sm:p-8 space-y-5 sm:space-y-6">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-brand-600 text-white font-bold flex items-center justify-center">
+            <div className="w-10 h-10 shrink-0 rounded-xl bg-brand-600 text-white font-bold flex items-center justify-center">
               OC
             </div>
-            <div>
+            <div className="min-w-0">
               <h1 className="text-xl font-bold text-slate-900">Oficina Conecta</h1>
               <p className="text-xs text-slate-500">Acceso Autenticado · Grupo 502-A Equipo I</p>
             </div>
@@ -115,9 +127,9 @@ function LoginContent() {
               className="p-3.5 rounded-lg bg-amber-50 border border-amber-300 text-amber-900 text-xs flex items-start gap-2.5"
             >
               <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-              <div>
+              <div className="min-w-0">
                 <p className="font-semibold">Sesión cerrada por inactividad (15 minutos)</p>
-                <p className="mt-0.5">
+                <p className="mt-0.5 break-words">
                   Todos los borradores locales en <code>sessionStorage</code> fueron purgados. Autentíquese nuevamente
                   para continuar.
                 </p>
@@ -128,10 +140,10 @@ function LoginContent() {
           {errorMsg && (
             <div
               role="alert"
-              className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-800 text-xs flex items-center gap-2"
+              className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-800 text-xs flex items-start gap-2"
             >
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              <span>{errorMsg}</span>
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span className="break-words">{errorMsg}</span>
             </div>
           )}
 
@@ -144,9 +156,10 @@ function LoginContent() {
                 id="email"
                 type="email"
                 required
+                autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                 placeholder="usuario@oficinaconecta.mx"
               />
             </div>
@@ -155,14 +168,25 @@ function LoginContent() {
               <label htmlFor="password" className="block text-xs font-semibold text-slate-700 mb-1">
                 Contraseña
               </label>
-              <input
-                id="password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-              />
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPasswordInput ? 'text' : 'password'}
+                  required
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full min-h-[44px] pl-3 pr-11 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPasswordInput((v) => !v)}
+                  aria-label={showPasswordInput ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  className="absolute right-1 top-1/2 -translate-y-1/2 min-h-[40px] min-w-[40px] inline-flex items-center justify-center rounded-lg text-slate-500 hover:text-slate-700"
+                >
+                  {showPasswordInput ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
 
             <button
@@ -170,32 +194,50 @@ function LoginContent() {
               disabled={loading}
               className="w-full min-h-[44px] py-2.5 px-4 rounded-lg bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white font-semibold text-sm flex items-center justify-center gap-2"
             >
-              <LogIn className="w-4 h-4" />
+              <LogIn className="w-4 h-4 shrink-0" />
               {loading ? 'Verificando sesión...' : 'Iniciar Sesión'}
             </button>
           </form>
 
-          <div className="pt-4 border-t border-slate-100 text-[11px] text-slate-500 space-y-1">
-            <p className="flex items-center gap-1.5">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-              Sedes piloto cerradas: CDMX, Oaxaca de Juárez y Puebla de Zaragoza.
+          <div className="pt-4 border-t border-slate-100 text-[11px] text-slate-500 space-y-1.5">
+            <p className="flex items-start gap-1.5">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+              <span>Sedes piloto cerradas: CDMX, Oaxaca de Juárez y Puebla de Zaragoza.</span>
             </p>
-            <p className="flex items-center gap-1.5">
-              <Lock className="w-3.5 h-3.5 text-slate-400" />
-              Advertencia de inactividad a los 13 min y cierre con purga a los 15 min.
+            <p className="flex items-start gap-1.5">
+              <Lock className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
+              <span>Advertencia de inactividad a los 13 min y cierre con purga a los 15 min.</span>
             </p>
           </div>
         </div>
 
         {demoTools && (
-          <div className="bg-slate-50 p-6 border-t md:border-t-0 md:border-l border-slate-200 flex flex-col justify-between">
+          <div className="min-w-0 bg-slate-50 p-4 sm:p-6 border-t md:border-t-0 md:border-l border-slate-200 flex flex-col justify-between">
             <div>
-              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-1.5">
-                <Building2 className="w-4 h-4" />
+              {/* Acordeón en móvil para mantener login visible sin scroll excesivo */}
+              <button
+                type="button"
+                onClick={() => setShowMobileAccounts((v) => !v)}
+                aria-expanded={showMobileAccounts}
+                className="md:hidden w-full min-h-[44px] flex items-center justify-between gap-2 text-xs font-bold uppercase tracking-wider text-slate-600"
+              >
+                <span className="flex items-center gap-1.5 min-w-0">
+                  <Building2 className="w-4 h-4 shrink-0 text-brand-600" />
+                  <span className="truncate">Cuentas Piloto ({DEMO_ACCOUNTS.length})</span>
+                </span>
+                {showMobileAccounts ? (
+                  <ChevronUp className="w-4 h-4 shrink-0" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 shrink-0" />
+                )}
+              </button>
+
+              <h2 className="hidden md:flex text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 items-center gap-1.5">
+                <Building2 className="w-4 h-4 shrink-0" />
                 Cuentas Piloto para Demostración
               </h2>
 
-              <div className="space-y-1.5">
+              <div className={`${showMobileAccounts ? 'mt-3 block' : 'hidden'} md:block space-y-1.5`}>
                 {DEMO_ACCOUNTS.map((acc) => (
                   <button
                     key={acc.correo}
@@ -203,20 +245,22 @@ function LoginContent() {
                     onClick={() => {
                       setEmail(acc.correo);
                       setPassword('OficinaConecta2026!');
+                      setShowMobileAccounts(false);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
-                    className={`w-full text-left px-3 py-2 rounded-lg border text-xs transition-colors ${
+                    className={`w-full min-h-[44px] text-left px-3 py-2 rounded-lg border text-xs transition-colors ${
                       email === acc.correo
                         ? 'bg-brand-50 border-brand-500 text-brand-900'
                         : 'bg-white border-slate-200 hover:border-slate-300 text-slate-700'
                     }`}
                   >
-                    <div className="flex items-center justify-between font-semibold">
-                      <span>{acc.nombre}</span>
-                      <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-slate-200 text-slate-800">
+                    <div className="flex items-center justify-between gap-2 font-semibold min-w-0">
+                      <span className="truncate">{acc.nombre}</span>
+                      <span className="shrink-0 font-mono text-[10px] px-1.5 py-0.5 rounded bg-slate-200 text-slate-800">
                         {acc.rol}
                       </span>
                     </div>
-                    <div className="text-[11px] text-slate-500 truncate">
+                    <div className="text-[11px] text-slate-500 truncate min-w-0">
                       {acc.sede} · {acc.correo}
                     </div>
                   </button>
@@ -224,15 +268,15 @@ function LoginContent() {
               </div>
             </div>
 
-            <div className="mt-4 text-[11px] text-slate-500 flex items-center justify-between gap-2">
+            <div className="mt-4 pt-3 border-t border-slate-200/70 text-[11px] text-slate-500 flex flex-wrap items-center justify-between gap-2">
               <span>Contraseña piloto:</span>
               {showDemoPass ? (
-                <code className="bg-slate-200 px-1.5 py-0.5 rounded">OficinaConecta2026!</code>
+                <code className="bg-slate-200 px-1.5 py-0.5 rounded break-all">OficinaConecta2026!</code>
               ) : (
                 <button
                   type="button"
                   onClick={() => setShowDemoPass(true)}
-                  className="text-brand-600 font-semibold hover:underline"
+                  className="min-h-[36px] text-brand-600 font-semibold hover:underline"
                 >
                   Mostrar clave demo
                 </button>
@@ -247,7 +291,7 @@ function LoginContent() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-slate-900" />}>
+    <Suspense fallback={<div className="min-h-[100dvh] bg-slate-900" />}>
       <LoginContent />
     </Suspense>
   );
