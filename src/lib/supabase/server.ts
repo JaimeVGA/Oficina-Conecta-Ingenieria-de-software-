@@ -1,10 +1,25 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 
 export function isSupabaseServerConfigured(): boolean {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   return Boolean(url && url.trim().length > 0 && key && key.trim().length > 0);
+}
+
+export function createSupabaseAdminClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  if (!url || !serviceRoleKey) {
+    return null;
+  }
+  return createClient(url, serviceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
 }
 
 export async function createSupabaseServerClient(responseObj?: {

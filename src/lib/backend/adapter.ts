@@ -1,6 +1,10 @@
 import crypto from 'node:crypto';
 import { cookies } from 'next/headers';
-import { createSupabaseServerClient, isSupabaseServerConfigured } from '@/lib/supabase/server';
+import {
+  createSupabaseAdminClient,
+  createSupabaseServerClient,
+  isSupabaseServerConfigured,
+} from '@/lib/supabase/server';
 import { getLocalEngine } from '@/lib/backend/localEngine';
 import { buildErrorResult, normalizeRpcResponse } from '@/lib/errors/mapRpcError';
 import { isDemoToolsEnabled } from '@/lib/security/validation';
@@ -183,7 +187,7 @@ export async function crearDepartamento(actor: PerfilUsuario, nombre: string): P
     }
     const clean = nombre.trim();
     if (!clean) return buildErrorResult('ERR-002', 'El nombre del departamento es obligatorio.', 422);
-    const supabase = await createSupabaseServerClient();
+    const supabase = createSupabaseAdminClient() ?? (await createSupabaseServerClient());
     if (!supabase) return buildErrorResult('ERR-005', 'Cliente Supabase no disponible.', 500);
     const { data, error } = await supabase
       .from('departamentos')
@@ -192,7 +196,10 @@ export async function crearDepartamento(actor: PerfilUsuario, nombre: string): P
       .single();
     if (error) {
       console.error('[adapter:crearDepartamento]', error);
-      return buildErrorResult('ERR-004', 'No fue posible registrar el departamento en la sede.', 409);
+      if (error.code === '23505') {
+        return buildErrorResult('ERR-004', 'Ya existe un departamento con ese nombre en su sede.', 409);
+      }
+      return buildErrorResult('ERR-005', 'No fue posible registrar el departamento en la sede.', 500);
     }
     return { ok: true, http_status: 201, data: { departamento: data } };
   }
@@ -210,23 +217,43 @@ export async function crearProyecto(
     if (input.sede_id && input.sede_id !== actor.sede_id) {
       return buildErrorResult('ERR-001', 'Acceso denegado: no puede crear proyectos en otra sede.', 403);
     }
-    const supabase = await createSupabaseServerClient();
+    const cleanNombre = (input.nombre ?? '').trim();
+    const cleanDescripcion = (input.descripcion ?? '').trim();
+    const cleanFechaFin = (input.fecha_fin_proyecto ?? '').trim();
+    if (!cleanNombre || !input.departamento_id || !cleanFechaFin) {
+      return buildErrorResult('ERR-002', 'Nombre, departamento y fecha de fin del proyecto son obligatorios.', 422);
+    }
+    const supabase = createSupabaseAdminClient() ?? (await createSupabaseServerClient());
     if (!supabase) return buildErrorResult('ERR-005', 'Cliente Supabase no disponible.', 500);
+
+    const { data: depto, error: deptoError } = await supabase
+      .from('departamentos')
+      .select('id, sede_id')
+      .eq('id', input.departamento_id)
+      .maybeSingle();
+    if (deptoError) {
+      console.error('[adapter:crearProyecto:deptoCheck]', deptoError);
+      return buildErrorResult('ERR-005', 'No fue posible validar el departamento seleccionado.', 500);
+    }
+    if (!depto || depto.sede_id !== actor.sede_id) {
+      return buildErrorResult('ERR-001', 'Acceso denegado: el departamento no pertenece a su sede.', 403);
+    }
+
     const { data, error } = await supabase
       .from('proyectos')
       .insert({
         sede_id: actor.sede_id,
         departamento_id: input.departamento_id,
-        nombre: input.nombre.trim(),
-        descripcion: input.descripcion.trim(),
-        fecha_fin_proyecto: input.fecha_fin_proyecto,
+        nombre: cleanNombre,
+        descripcion: cleanDescripcion,
+        fecha_fin_proyecto: cleanFechaFin,
         creado_por: actor.id,
       })
       .select()
       .single();
     if (error) {
       console.error('[adapter:crearProyecto]', error);
-      return buildErrorResult('ERR-001', 'No fue posible crear el proyecto en la sede actual.', 403);
+      return buildErrorResult('ERR-005', 'No fue posible crear el proyecto en la sede actual.', 500);
     }
     return { ok: true, http_status: 201, data: { proyecto: data } };
   }
