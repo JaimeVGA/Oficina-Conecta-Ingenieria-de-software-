@@ -7,7 +7,6 @@ import {
   Bell,
   Building2,
   CheckSquare,
-  Clock,
   FileCheck2,
   FolderKanban,
   LayoutDashboard,
@@ -17,17 +16,11 @@ import {
   Settings,
   ShieldAlert,
   Sun,
-  Wifi,
-  WifiOff,
   X,
 } from 'lucide-react';
 import type { PerfilUsuario } from '@/lib/supabase/types';
 import { RoleBadge } from '@/components/layout/RoleBadge';
-import {
-  NetworkStatusBanner,
-  SessionInactivityGuard,
-  useSessionGuard,
-} from '@/components/session/SessionInactivityGuard';
+import { NetworkStatusBanner, SessionInactivityGuard } from '@/components/session/SessionInactivityGuard';
 import {
   PreferencesProvider,
   getRegionLabel,
@@ -38,7 +31,7 @@ import { createSupabaseBrowserClient, isSupabaseConfigured } from '@/lib/supabas
 
 function AppShellInner({
   perfil,
-  mode,
+  mode: _mode,
   children,
 }: {
   perfil: PerfilUsuario;
@@ -48,16 +41,8 @@ function AppShellInner({
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const {
-    effectiveOnline,
-    simulatedOffline,
-    setSimulatedOffline,
-    simulateInactivityWarning,
-    simulateInactivityExpiry,
-  } = useSessionGuard();
   const { t, locale, resolvedTheme, toggleDarkTheme, getUserCustomization } = usePreferences();
 
-  const demoToolsEnabled = process.env.NEXT_PUBLIC_ENABLE_DEMO_TOOLS !== 'false';
   const customization = getUserCustomization(perfil.id, perfil.rol);
   const isDark = resolvedTheme === 'dark' || resolvedTheme === 'midnight';
 
@@ -140,10 +125,8 @@ function AppShellInner({
 
           <div className="p-4 border-t border-slate-800 space-y-2 text-xs text-slate-400">
             <div className="flex items-center justify-between">
-              <span>{t.envLabel}:</span>
-              <span className="font-mono text-slate-200">
-                {mode === 'supabase' ? 'Supabase us-east-1' : 'Motor Local ACID'}
-              </span>
+              <span>Versión:</span>
+              <span className="font-mono text-slate-200">v1.0</span>
             </div>
             <div className="flex items-center justify-between">
               <span>{t.tzLabel}:</span>
@@ -209,55 +192,10 @@ function AppShellInner({
                 })}
               </nav>
 
-              {demoToolsEnabled && (
-                <div className="mx-3 mb-3 p-3 rounded-lg bg-slate-800/80 border border-slate-700 space-y-2">
-                  <p className="text-[11px] font-semibold text-slate-300">Pruebas CP-003 (Red / Inactividad):</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSimulatedOffline(!simulatedOffline);
-                        setMobileOpen(false);
-                      }}
-                      className={`flex-1 inline-flex items-center justify-center gap-1 px-2.5 min-h-[38px] rounded text-xs font-medium ${
-                        effectiveOnline
-                          ? 'bg-slate-700 text-slate-100 hover:bg-slate-600'
-                          : 'bg-red-600 text-white'
-                      }`}
-                    >
-                      {effectiveOnline ? <Wifi className="w-3.5 h-3.5" /> : <WifiOff className="w-3.5 h-3.5" />}
-                      {effectiveOnline ? 'Sin Red' : 'Conectar'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        simulateInactivityWarning();
-                        setMobileOpen(false);
-                      }}
-                      className="inline-flex items-center justify-center gap-1 px-3 min-h-[38px] rounded text-xs font-medium bg-amber-500/20 text-amber-200 border border-amber-500/30"
-                    >
-                      <Clock className="w-3.5 h-3.5" /> 13m
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        simulateInactivityExpiry();
-                        setMobileOpen(false);
-                      }}
-                      className="inline-flex items-center justify-center px-3 min-h-[38px] rounded text-xs font-medium bg-red-500/20 text-red-200 border border-red-500/30"
-                    >
-                      15m
-                    </button>
-                  </div>
-                </div>
-              )}
-
               <div className="p-4 border-t border-slate-800 space-y-1.5 text-[11px] text-slate-400">
                 <div className="flex items-center justify-between gap-2">
-                  <span>{t.envLabel}:</span>
-                  <span className="font-mono text-slate-200 truncate">
-                    {mode === 'supabase' ? 'Supabase us-east-1' : 'Motor Local ACID'}
-                  </span>
+                  <span>Versión:</span>
+                  <span className="font-mono text-slate-200 truncate">v1.0</span>
                 </div>
                 <div className="flex items-center justify-between gap-2">
                   <span>{t.tzLabel}:</span>
@@ -320,42 +258,6 @@ function AppShellInner({
               >
                 {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
               </button>
-
-              {demoToolsEnabled && (
-                <div className="hidden xl:flex flex-wrap items-center gap-1.5 bg-slate-100 border border-slate-200 rounded-lg px-2 py-1">
-                  <span className="text-[11px] font-semibold text-slate-600 px-1">Pruebas CP-003:</span>
-                  <button
-                    type="button"
-                    onClick={() => setSimulatedOffline(!simulatedOffline)}
-                    className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${
-                      effectiveOnline
-                        ? 'bg-white text-slate-700 border border-slate-300 hover:bg-slate-50'
-                        : 'bg-red-600 text-white'
-                    }`}
-                    title="Simular corte de conexión a internet"
-                  >
-                    {effectiveOnline ? <Wifi className="w-3.5 h-3.5" /> : <WifiOff className="w-3.5 h-3.5" />}
-                    {effectiveOnline ? 'Simular Sin Red' : 'Restablecer Red'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={simulateInactivityWarning}
-                    className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-amber-100 text-amber-900 hover:bg-amber-200"
-                    title="Simular 13 minutos de inactividad"
-                  >
-                    <Clock className="w-3.5 h-3.5" />
-                    13m
-                  </button>
-                  <button
-                    type="button"
-                    onClick={simulateInactivityExpiry}
-                    className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-900 hover:bg-red-200"
-                    title="Simular 15 minutos de inactividad y purga de sessionStorage"
-                  >
-                    15m
-                  </button>
-                </div>
-              )}
 
               <button
                 type="button"

@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   ClipboardList,
   FileCheck2,
+  LayoutGrid,
   ShieldAlert,
 } from 'lucide-react';
 import {
@@ -45,13 +46,13 @@ export default async function DashboardHomePage() {
         <div>
           <h1 className="text-xl font-bold text-slate-900">
             {actor.rol === 'DN'
-              ? 'Tablero Nacional de Operaciones (3 Sedes Piloto)'
+              ? 'Tablero Nacional de Operaciones'
               : actor.rol === 'GS'
                 ? 'Tablero de Gerencia de Sede'
                 : 'Mis Tareas Asignadas'}
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Seguimiento centralizado, autorizaciones atómicas y control documental · Línea Base v1.0 (FUE-011)
+            Seguimiento centralizado de proyectos, tareas, autorizaciones y documentos.
           </p>
         </div>
 
@@ -135,33 +136,48 @@ export default async function DashboardHomePage() {
         ))}
       </div>
 
-      {/* Guía del Recorrido Completo End-to-End */}
+      {/* Accesos Rápidos */}
       <div className="bg-slate-900 text-slate-100 rounded-xl p-5 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-sm font-bold flex items-center gap-2">
-            <ShieldAlert className="w-4 h-4 text-amber-400" />
-            Recorrido Completo Exigido (FUE-001 / FUE-011)
+            <LayoutGrid className="w-4 h-4 text-brand-400" />
+            Accesos Rápidos
           </h2>
           <span className="text-xs text-slate-400">
-            Avisos emitidos en bandeja: {avisosEmitidos} · Tareas activas: {tareas.length}
+            Notificaciones emitidas: {avisosEmitidos} · Tareas activas: {tareas.length}
           </span>
         </div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-6 gap-2.5 text-xs">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-2.5 text-xs">
           {[
-            { step: '1. Asignar Tarea', desc: 'GS crea tarea (seq=0) y dispara aviso.', href: '/tareas' },
-            { step: '2. Solicitar Prórroga', desc: 'OP/GS usa borrador + UUID idempotente.', href: '/tareas' },
-            { step: '3. Resolver Atómica', desc: 'GS (≤5d) o DN (>5d) con SELECT FOR UPDATE.', href: '/autorizaciones' },
-            { step: '4. Bitácora Append-Only', desc: 'Registro no borrable (SQL 42501).', href: '/bitacora' },
-            { step: '5. Aviso Simulado', desc: 'Resolución y recordatorios 48h/24h.', href: '/notificaciones' },
-            { step: '6. Exportar .ics', desc: 'UID fijo + SEQUENCE incremental.', href: '/tareas' },
+            { title: 'Tareas', desc: 'Consulta actividades, avances y fechas de entrega.', href: '/tareas' },
+            {
+              title: 'Proyectos y Deptos',
+              desc: 'Estructura operativa por sede y departamento.',
+              href: '/proyectos',
+            },
+            {
+              title: 'Autorizaciones',
+              desc: 'Solicita o resuelve prórrogas y cambios de alcance.',
+              href: '/autorizaciones',
+            },
+            {
+              title: 'Notificaciones',
+              desc: 'Revisa avisos de asignación y recordatorios.',
+              href: '/notificaciones',
+            },
+            {
+              title: 'Bitácora',
+              desc: 'Consulta el historial inmutable de resoluciones.',
+              href: '/bitacora',
+            },
           ].map((item) => (
             <Link
-              key={item.step}
+              key={item.title}
               href={item.href}
               className="bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg p-3 transition-colors block"
             >
-              <p className="font-semibold text-white">{item.step}</p>
+              <p className="font-semibold text-white">{item.title}</p>
               <p className="text-[11px] text-slate-300 mt-1">{item.desc}</p>
             </Link>
           ))}
@@ -169,13 +185,13 @@ export default async function DashboardHomePage() {
 
         <div className="flex flex-wrap items-center gap-4 pt-1 text-xs text-slate-300">
           <Link href="/notificaciones" className="inline-flex items-center gap-1 hover:text-white underline">
-            <Bell className="w-3.5 h-3.5" /> Abrir Bandeja de Correos Simulados
+            <Bell className="w-3.5 h-3.5" /> Abrir Notificaciones
           </Link>
           <Link href="/bitacora" className="inline-flex items-center gap-1 hover:text-white underline">
-            <ShieldAlert className="w-3.5 h-3.5" /> Auditar Bitácora de Autorizaciones
+            <ShieldAlert className="w-3.5 h-3.5" /> Consultar Bitácora
           </Link>
           <span className="inline-flex items-center gap-1 text-slate-400">
-            <CalendarPlus className="w-3.5 h-3.5" /> Exportación estándar RFC 5545 activa
+            <CalendarPlus className="w-3.5 h-3.5" /> Exportación de calendario (.ics) disponible en tareas y sedes
           </span>
         </div>
       </div>

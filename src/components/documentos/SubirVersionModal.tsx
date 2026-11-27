@@ -20,14 +20,12 @@ export function SubirVersionModal({
   const [nombreDocumento, setNombreDocumento] = useState(initialDocumentName || existingDocumentNames[0] || '');
   const [descripcionCambio, setDescripcionCambio] = useState('');
   const [file, setFile] = useState<File | null>(null);
-  const [hashPreview, setHashPreview] = useState<string | null>(null);
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const checkHash = async (selectedFile: File, docName: string) => {
     const hash = await computeFileSha256(selectedFile);
-    setHashPreview(hash);
     if (!docName.trim()) {
       setDuplicateWarning(null);
       return;
@@ -47,8 +45,6 @@ export function SubirVersionModal({
     setDuplicateWarning(null);
     if (f) {
       await checkHash(f, nombreDocumento);
-    } else {
-      setHashPreview(null);
     }
   };
 
@@ -60,7 +56,7 @@ export function SubirVersionModal({
       return;
     }
     if (!nombreDocumento.trim() || !descripcionCambio.trim()) {
-      setErrorMsg('ERR-002: El nombre del documento y la descripción del cambio son obligatorios.');
+      setErrorMsg('El nombre del documento y la descripción del cambio son obligatorios.');
       return;
     }
 
@@ -144,9 +140,6 @@ export function SubirVersionModal({
               onChange={handleFileChange}
               className="w-full text-xs text-slate-600"
             />
-            {hashPreview && (
-              <p className="mt-1 font-mono text-[10px] text-slate-500 break-all">SHA-256: {hashPreview}</p>
-            )}
           </div>
 
           {duplicateWarning && (

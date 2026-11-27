@@ -47,7 +47,7 @@ const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
 const MUTATION_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
 export function isDemoToolsEnabled(): boolean {
-  return process.env.NEXT_PUBLIC_ENABLE_DEMO_TOOLS !== 'false';
+  return process.env.NEXT_PUBLIC_ENABLE_DEMO_TOOLS === 'true';
 }
 
 export function isValidUuid(val: unknown): val is string {

@@ -48,13 +48,11 @@ export function ExportIcsButton({
 
       {showHint && (
         <div className="fixed inset-x-4 bottom-24 sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 sm:w-80 z-40 bg-slate-900 text-slate-100 text-xs rounded-xl p-3.5 shadow-xl space-y-1.5">
-          <p className="font-bold text-white">Actualización sin duplicados (RFC 5545)</p>
-          <p>
-            Cada evento usa <code>UID:tarea-&#123;id&#125;@oficinaconecta.mx</code> y <code>SEQUENCE</code> incremental.
-          </p>
+          <p className="font-bold text-white">Sincronización de calendario (.ics)</p>
           <p className="text-slate-300">
-            Tras aprobar una prórroga, exporte nuevamente e importe el archivo <strong>sobre el mismo calendario</strong>{' '}
-            en Google Calendar o Mozilla Thunderbird para actualizar la fecha existente sin duplicar la cita.
+            Al exportar nuevamente tras actualizar la fecha de una tarea e importar el archivo{' '}
+            <strong>sobre el mismo calendario</strong> en Google Calendar o Mozilla Thunderbird, las fechas se
+            actualizarán automáticamente sin duplicar eventos.
           </p>
         </div>
       )}

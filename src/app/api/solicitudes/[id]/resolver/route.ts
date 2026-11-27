@@ -13,7 +13,6 @@ export async function POST(req: Request, context: { params: { id: string } }) {
     dictamen?: Dictamen;
     motivo_resolucion?: string;
     idempotency_key?: string;
-    simular_fallo_bitacora?: boolean;
   };
 
   if (!body.idempotency_key || !isValidUuid(body.idempotency_key)) {
@@ -34,7 +33,7 @@ export async function POST(req: Request, context: { params: { id: string } }) {
     dictamen: (body.dictamen ?? 'APROBADA') as Dictamen,
     motivo_resolucion: body.motivo_resolucion ?? '',
     idempotency_key: body.idempotency_key,
-    simular_fallo_bitacora: Boolean(body.simular_fallo_bitacora),
+    simular_fallo_bitacora: false,
   });
   return jsonFromApiResult(res);
 }

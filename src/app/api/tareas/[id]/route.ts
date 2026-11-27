@@ -35,7 +35,6 @@ export async function PATCH(req: Request, context: { params: { id: string } }) {
     titulo?: string;
     fecha_limite?: string;
     motivo_cambio?: string;
-    diferir_invalidacion_cp004?: boolean;
   };
 
   if (exceedsMaxLength(body.titulo, 300) || exceedsMaxLength(body.motivo_cambio, 2000)) {
@@ -50,7 +49,7 @@ export async function PATCH(req: Request, context: { params: { id: string } }) {
       {
         ok: false,
         error_code: 'ERR-001',
-        message: 'ERR-001: Dirección Nacional no puede modificar tareas locales directamente (PER-003).',
+        message: 'Dirección Nacional no puede modificar tareas locales directamente.',
       },
       { status: 403 }
     );
@@ -71,7 +70,7 @@ export async function PATCH(req: Request, context: { params: { id: string } }) {
     fecha_limite: body.fecha_limite,
     estado: body.estado,
     motivo_cambio: body.motivo_cambio,
-    diferir_invalidacion_cp004: body.diferir_invalidacion_cp004,
+    diferir_invalidacion_cp004: false,
   });
   return jsonFromApiResult(res);
 }

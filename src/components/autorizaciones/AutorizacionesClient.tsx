@@ -36,8 +36,7 @@ export function AutorizacionesClient({
         <div>
           <h1 className="text-xl font-bold text-slate-900">Bandeja de Solicitudes de Autorización</h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Regla RN-001: Prórroga ≤ 5 días (OP, sin superar fin proyecto) resuelve GS; &gt; 5 días, alcance o
-            solicitud de GS resuelve DN. Nadie autoriza su propia solicitud.
+            Solicitudes de prórroga y cambio de alcance. Nadie puede aprobar o rechazar su propia solicitud.
           </p>
         </div>
       </div>
@@ -113,7 +112,7 @@ export function AutorizacionesClient({
 
                     {s.estado === 'PENDIENTE_REVISION' && isOwnRequest && (actor.rol === 'GS' || actor.rol === 'DN') && (
                       <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-slate-100 text-slate-500 text-[11px]">
-                        <ShieldAlert className="w-3.5 h-3.5" /> Auto-aprobación prohibida (ERR-003)
+                        <ShieldAlert className="w-3.5 h-3.5" /> Auto-aprobación no permitida
                       </span>
                     )}
                   </div>

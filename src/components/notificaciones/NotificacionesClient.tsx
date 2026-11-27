@@ -1,20 +1,19 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
+import { RefreshCw } from 'lucide-react';
 import { BandejaSimuladaTable } from '@/components/notificaciones/BandejaSimuladaTable';
-import { SimularTiempoPanel } from '@/components/notificaciones/SimularTiempoPanel';
-import type { CorreoSimulado, EstadoAviso, MotivoAviso, RolUsuario } from '@/lib/supabase/types';
+import type { CorreoSimulado, EstadoAviso, MotivoAviso } from '@/lib/supabase/types';
 
 export function NotificacionesClient({
-  actorRol,
   initialCorreos,
 }: {
-  actorRol: RolUsuario;
   initialCorreos: CorreoSimulado[];
 }) {
   const [correos, setCorreos] = useState(initialCorreos);
   const [motivoFilter, setMotivoFilter] = useState<'TODOS' | MotivoAviso>('TODOS');
   const [estadoFilter, setEstadoFilter] = useState<'TODOS' | EstadoAviso>('TODOS');
+  const [refreshing, setRefreshing] = useState(false);
 
   const filtered = useMemo(() => {
     return correos.filter((c) => {
@@ -25,22 +24,37 @@ export function NotificacionesClient({
   }, [correos, motivoFilter, estadoFilter]);
 
   const refresh = async () => {
-    const res = await fetch('/api/notificaciones');
-    const json = (await res.json()) as { correos?: CorreoSimulado[] };
-    if (json.correos) setCorreos(json.correos);
+    setRefreshing(true);
+    try {
+      await fetch('/api/notificaciones/simular-tiempo', { method: 'POST' }).catch(() => null);
+      const res = await fetch('/api/notificaciones');
+      const json = (await res.json()) as { correos?: CorreoSimulado[] };
+      if (json.correos) setCorreos(json.correos);
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-xl font-bold text-slate-900">Bandeja de Notificaciones Simuladas (INT-003)</h1>
-        <p className="text-xs text-slate-500 mt-0.5">
-          Todos los avisos mostrados son <strong>SIMULADOS</strong> (no se envían correos reales ni se conectan APIs de
-          Google/Microsoft). Clave de evento única impide duplicados al recargar.
-        </p>
-      </div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-bold text-slate-900">Centro de Notificaciones</h1>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Avisos automáticos de asignación, solicitudes, resoluciones y recordatorios de vencimiento.
+          </p>
+        </div>
 
-      <SimularTiempoPanel actorRol={actorRol} onEvaluated={refresh} />
+        <button
+          type="button"
+          disabled={refreshing}
+          onClick={refresh}
+          className="w-full sm:w-auto justify-center min-h-[40px] inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 disabled:opacity-60 text-slate-700 text-xs font-semibold"
+        >
+          <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+          {refreshing ? 'Actualizando...' : 'Actualizar'}
+        </button>
+      </div>
 
       <div className="flex flex-wrap items-center gap-3 bg-white border border-slate-200 rounded-xl p-3">
         <select
@@ -49,11 +63,11 @@ export function NotificacionesClient({
           className="px-3 py-2 rounded-lg border border-slate-300 text-xs bg-white"
         >
           <option value="TODOS">Todos los motivos</option>
-          <option value="ASIGNACION">ASIGNACION</option>
-          <option value="SOLICITUD">SOLICITUD</option>
-          <option value="RESOLUCION">RESOLUCION</option>
-          <option value="RECORDATORIO_48H">RECORDATORIO_48H</option>
-          <option value="RECORDATORIO_24H">RECORDATORIO_24H</option>
+          <option value="ASIGNACION">Asignación</option>
+          <option value="SOLICITUD">Solicitud</option>
+          <option value="RESOLUCION">Resolución</option>
+          <option value="RECORDATORIO_48H">Recordatorio 48h</option>
+          <option value="RECORDATORIO_24H">Recordatorio 24h</option>
         </select>
 
         <select
@@ -62,9 +76,9 @@ export function NotificacionesClient({
           className="px-3 py-2 rounded-lg border border-slate-300 text-xs bg-white"
         >
           <option value="TODOS">Todos los estados</option>
-          <option value="EMITIDO">EMITIDO</option>
-          <option value="PROGRAMADO">PROGRAMADO</option>
-          <option value="CANCELADO">CANCELADO</option>
+          <option value="EMITIDO">Enviado</option>
+          <option value="PROGRAMADO">Programado</option>
+          <option value="CANCELADO">Cancelado</option>
         </select>
 
         <span className="text-xs text-slate-500 ml-auto">

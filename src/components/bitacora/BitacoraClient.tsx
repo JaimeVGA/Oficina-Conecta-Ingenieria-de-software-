@@ -1,66 +1,24 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Lock, ShieldAlert } from 'lucide-react';
+import React from 'react';
+import { ShieldAlert } from 'lucide-react';
 import { formatMexicoCityDateTime } from '@/lib/dates/mexicoCity';
 import type { BitacoraEnriquecida } from '@/lib/supabase/types';
 
 export function BitacoraClient({ registros }: { registros: BitacoraEnriquecida[] }) {
-  const demoTools = process.env.NEXT_PUBLIC_ENABLE_DEMO_TOOLS !== 'false';
-  const [cp001Result, setCp001Result] = useState<string | null>(null);
-
-  const runCp001Probe = async (method: 'PUT' | 'DELETE') => {
-    const res = await fetch('/api/bitacora', {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: registros[0]?.id ?? 'probe' }),
-    });
-    const json = (await res.json()) as { error_code?: string; sqlstate?: string; message?: string };
-    setCp001Result(`HTTP ${res.status} · [${json.error_code ?? 'ERR-005'} / SQLSTATE ${json.sqlstate ?? '42501'}] ${json.message}`);
-  };
-
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
             <ShieldAlert className="w-5 h-5 text-emerald-600" />
-            Bitácora de Autorizaciones (Solo Adición / Append-Only)
+            Bitácora de Autorizaciones
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            PER-008 / RES-002: Sin edición, sin borrado y sin captura de direcciones IP. Privilegios UPDATE y DELETE
-            revocados en PostgreSQL (SQLSTATE 42501).
+            Historial inmutable de resoluciones y cambios autorizados sobre tareas.
           </p>
         </div>
-
-        {demoTools && (
-          <div className="w-full sm:w-auto flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => runCp001Probe('PUT')}
-              className="flex-1 sm:flex-initial justify-center min-h-[40px] inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-rose-300 bg-rose-50 hover:bg-rose-100 text-rose-900 text-xs font-semibold"
-            >
-              <Lock className="w-3.5 h-3.5" /> Probar PUT directo (CP-001)
-            </button>
-            <button
-              type="button"
-              onClick={() => runCp001Probe('DELETE')}
-              className="flex-1 sm:flex-initial justify-center min-h-[40px] inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-rose-300 bg-rose-50 hover:bg-rose-100 text-rose-900 text-xs font-semibold"
-            >
-              <Lock className="w-3.5 h-3.5" /> Probar DELETE directo (CP-001)
-            </button>
-          </div>
-        )}
       </div>
-
-      {cp001Result && (
-        <div
-          role="status"
-          className="bg-slate-900 text-emerald-300 font-mono text-xs rounded-xl p-4 border border-slate-700 break-words overflow-x-auto"
-        >
-          Respuesta del servidor ante intento de alteración: {cp001Result}
-        </div>
-      )}
 
       {/* Tarjetas de Bitácora (Móvil) */}
       <div className="md:hidden space-y-3">

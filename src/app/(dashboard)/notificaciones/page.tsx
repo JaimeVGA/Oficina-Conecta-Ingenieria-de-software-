@@ -8,5 +8,5 @@ export default async function NotificacionesPage() {
   if (!actor) return null;
   const correos = await listCorreosSimulados(actor);
 
-  return <NotificacionesClient actorRol={actor.rol} initialCorreos={correos} />;
+  return <NotificacionesClient initialCorreos={correos} />;
 }

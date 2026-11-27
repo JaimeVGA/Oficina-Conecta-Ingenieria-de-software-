@@ -3,22 +3,14 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AlertTriangle, Clock, LogOut, Wifi, WifiOff } from 'lucide-react';
-import {
-  INACTIVITY_EXPIRE_MS,
-  INACTIVITY_WARN_MS,
-  useInactivityTimer,
-} from '@/hooks/useInactivityTimer';
+import { useInactivityTimer } from '@/hooks/useInactivityTimer';
 import { createSupabaseBrowserClient, isSupabaseConfigured } from '@/lib/supabase/client';
 
 interface SessionGuardContextValue {
   isOnline: boolean;
   justReconnected: boolean;
   dismissReconnectedBanner: () => void;
-  simulatedOffline: boolean;
-  setSimulatedOffline: (offline: boolean) => void;
   effectiveOnline: boolean;
-  simulateInactivityWarning: () => void;
-  simulateInactivityExpiry: () => void;
   registerActivity: () => void;
 }
 
@@ -26,11 +18,7 @@ const SessionGuardContext = createContext<SessionGuardContextValue>({
   isOnline: true,
   justReconnected: false,
   dismissReconnectedBanner: () => {},
-  simulatedOffline: false,
-  setSimulatedOffline: () => {},
   effectiveOnline: true,
-  simulateInactivityWarning: () => {},
-  simulateInactivityExpiry: () => {},
   registerActivity: () => {},
 });
 
@@ -47,10 +35,9 @@ export function SessionInactivityGuard({
 }) {
   const router = useRouter();
   const [isOnline, setIsOnline] = useState(true);
-  const [simulatedOffline, setSimulatedOffline] = useState(false);
   const [justReconnected, setJustReconnected] = useState(false);
 
-  const effectiveOnline = isOnline && !simulatedOffline;
+  const effectiveOnline = isOnline;
 
   useEffect(() => {
     setIsOnline(typeof navigator !== 'undefined' ? navigator.onLine : true);
@@ -72,52 +59,32 @@ export function SessionInactivityGuard({
     };
   }, []);
 
-  const handleSetSimulatedOffline = useCallback((offline: boolean) => {
-    setSimulatedOffline(offline);
-    if (!offline) {
-      setJustReconnected(true);
-    } else {
-      setJustReconnected(false);
-    }
-  }, []);
-
   const handleExpire = useCallback(async () => {
-    // 1. Limpieza inmediata e independiente de red (INT-001, RN-004, CAL-002)
     try {
       sessionStorage.clear();
     } catch {
       // Ignorar
     }
 
-    // 2. Cerrar sesión local de Supabase sin depender de respuesta de red (scope: 'local')
     try {
       if (isSupabaseConfigured()) {
         const supabase = createSupabaseBrowserClient();
         await supabase?.auth.signOut({ scope: 'local' });
       }
-      if (navigator.onLine && !simulatedOffline) {
+      if (navigator.onLine) {
         await fetch('/api/auth/logout', { method: 'POST' }).catch(() => null);
       }
     } catch {
       // Continuar incluso sin conexión
     }
 
-    // 3. Redirigir a pantalla de login exigiendo nueva autenticación
     router.replace('/login?reason=timeout');
-  }, [router, simulatedOffline]);
+  }, [router]);
 
   const timer = useInactivityTimer({
     enabled,
     onExpire: handleExpire,
   });
-
-  const simulateInactivityWarning = useCallback(() => {
-    timer.simulateElapsedMs(INACTIVITY_WARN_MS + 1000);
-  }, [timer]);
-
-  const simulateInactivityExpiry = useCallback(() => {
-    timer.simulateElapsedMs(INACTIVITY_EXPIRE_MS + 1000);
-  }, [timer]);
 
   return (
     <SessionGuardContext.Provider
@@ -125,23 +92,17 @@ export function SessionInactivityGuard({
         isOnline,
         justReconnected,
         dismissReconnectedBanner: () => setJustReconnected(false),
-        simulatedOffline,
-        setSimulatedOffline: handleSetSimulatedOffline,
         effectiveOnline,
-        simulateInactivityWarning,
-        simulateInactivityExpiry,
         registerActivity: timer.registerActivity,
       }}
     >
-      {/* Desmontaje inmediato de vistas/formularios al expirar (CP-003) */}
       {timer.isExpired ? (
         <div className="min-h-[100dvh] flex items-center justify-center bg-slate-900 text-white p-4 sm:p-6">
           <div className="max-w-md w-full bg-slate-800 border border-slate-700 rounded-xl p-6 text-center space-y-4">
             <LogOut className="w-10 h-10 text-red-400 mx-auto" />
             <h2 className="text-lg font-semibold">Sesión expirada por inactividad</h2>
             <p className="text-sm text-slate-300">
-              Por seguridad, su sesión venció tras 15 minutos sin actividad y los borradores locales en{' '}
-              <code>sessionStorage</code> fueron eliminados.
+              Por seguridad, tu sesión venció tras 15 minutos sin actividad y los borradores locales fueron eliminados.
             </p>
             <button
               type="button"
@@ -156,7 +117,7 @@ export function SessionInactivityGuard({
         <>
           {children}
 
-          {/* Modal de advertencia al minuto 13 (INT-001, RN-004) */}
+          {/* Modal de advertencia al minuto 13 */}
           {enabled && timer.showWarningModal && (
             <div
               role="dialog"
@@ -218,8 +179,8 @@ export function NetworkStatusBanner() {
       >
         <WifiOff className="w-4 h-4 shrink-0" />
         <span>
-          Sin conexión con el servidor central: los cambios no se han guardado. Los formularios activos se
-          conservan como borrador local en <code>sessionStorage</code>.
+          Sin conexión con el servidor central: los cambios no se han guardado. Tus borradores activos se conservan
+          localmente en este navegador.
         </span>
       </div>
     );

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { AlertTriangle, CheckCircle2, ShieldAlert, X, XCircle } from 'lucide-react';
+import { CheckCircle2, ShieldAlert, X, XCircle } from 'lucide-react';
 import { useIdempotentDraft } from '@/hooks/useIdempotentDraft';
 import { formatMexicoCityDateTime } from '@/lib/dates/mexicoCity';
 import type { Dictamen, SolicitudEnriquecida } from '@/lib/supabase/types';
@@ -15,7 +15,6 @@ export function ResolverSolicitudModal({
   onClose: () => void;
   onResolved: () => void;
 }) {
-  const demoTools = process.env.NEXT_PUBLIC_ENABLE_DEMO_TOOLS !== 'false';
   const draft = useIdempotentDraft<{ dictamen: Dictamen; motivo: string }>(
     `oc_draft_resolver_${solicitud.id}`,
     {
@@ -24,10 +23,8 @@ export function ResolverSolicitudModal({
     }
   );
 
-  const [simularFalloBitacora, setSimularFalloBitacora] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errorPayload, setErrorPayload] = useState<{
-    error_code?: string;
     message: string;
     motivo_original?: string;
     motivo_invalidacion?: string;
@@ -40,8 +37,7 @@ export function ResolverSolicitudModal({
 
     if (draft.data.motivo.trim().length === 0) {
       setErrorPayload({
-        error_code: 'ERR-002',
-        message: 'ERR-002: El motivo de la resolución es obligatorio (no puede estar vacío).',
+        message: 'El motivo de la resolución es obligatorio.',
       });
       return;
     }
@@ -55,12 +51,10 @@ export function ResolverSolicitudModal({
           dictamen: draft.data.dictamen,
           motivo_resolucion: draft.data.motivo,
           idempotency_key: draft.idempotencyKey,
-          simular_fallo_bitacora: simularFalloBitacora,
         }),
       });
       const json = (await res.json()) as {
         ok?: boolean;
-        error_code?: string;
         message?: string;
         dictamen?: string;
         valor_anterior?: string;
@@ -71,24 +65,22 @@ export function ResolverSolicitudModal({
 
       if (!res.ok || !json.ok) {
         setErrorPayload({
-          error_code: json.error_code,
           message: json.message ?? 'No fue posible resolver la solicitud.',
           motivo_original: json.motivo_original,
           motivo_invalidacion: json.motivo_invalidacion,
         });
-        onResolved(); // Refrescar por si pasó a INVALIDADA o fue resuelta por otro usuario
+        onResolved();
         return;
       }
 
       draft.clearDraft();
       setSuccessMsg(
-        `Dictamen ${json.dictamen} confirmado atómicamente en tarea y bitácora. Cambio: ${json.valor_anterior} -> ${json.valor_nuevo}.`
+        `Dictamen ${json.dictamen} registrado correctamente. Cambio aplicado: ${json.valor_anterior} -> ${json.valor_nuevo}.`
       );
       onResolved();
     } catch {
       setErrorPayload({
-        error_code: 'ERR-005',
-        message: 'Error de conexión al intentar resolver. Sus datos locales permanecen con el mismo UUID.',
+        message: 'Error de conexión al intentar resolver. Por favor intenta nuevamente.',
       });
     } finally {
       setSubmitting(false);
@@ -129,11 +121,6 @@ export function ResolverSolicitudModal({
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-1 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5 text-[11px] text-amber-900">
-          <span className="font-semibold">{draft.draftLabel}</span>
-          <span className="font-mono break-all">UUID: {draft.idempotencyKey}</span>
-        </div>
-
         {errorPayload && (
           <div
             role="alert"
@@ -141,10 +128,7 @@ export function ResolverSolicitudModal({
           >
             <div className="flex items-center gap-2 font-bold">
               <ShieldAlert className="w-4 h-4 text-red-600 shrink-0" />
-              <span>
-                {errorPayload.error_code ? `[${errorPayload.error_code}] ` : ''}
-                {errorPayload.message}
-              </span>
+              <span>{errorPayload.message}</span>
             </div>
             {errorPayload.motivo_original && (
               <p>
@@ -163,7 +147,7 @@ export function ResolverSolicitudModal({
           <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 space-y-3 text-xs text-emerald-900">
             <div className="flex items-center gap-2 font-bold text-sm">
               <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-              Resolución Atómica Completada
+              Resolución Registrada
             </div>
             <p>{successMsg}</p>
             <div className="flex justify-end">
@@ -204,9 +188,7 @@ export function ResolverSolicitudModal({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Motivo del dictamen (obligatorio, sin mínimo artificial — RN-002)
-              </label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Motivo del dictamen</label>
               <textarea
                 rows={3}
                 value={draft.data.motivo}
@@ -215,25 +197,6 @@ export function ResolverSolicitudModal({
                 className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm"
               />
             </div>
-
-            {demoTools && (
-              <label className="flex items-start gap-2.5 p-3 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-900 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={simularFalloBitacora}
-                  onChange={(e) => setSimularFalloBitacora(e.target.checked)}
-                  className="mt-0.5"
-                />
-                <span>
-                  <strong className="flex items-center gap-1">
-                    <AlertTriangle className="w-3.5 h-3.5 text-amber-700" />
-                    Simular fallo en bitácora (Demostración CP-002)
-                  </strong>
-                  Fuerza una excepción al insertar en <code>bitacora_autorizaciones</code> para comprobar el{' '}
-                  <strong>ROLLBACK total</strong> de la tarea y la solicitud.
-                </span>
-              </label>
-            )}
 
             <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2 pt-2 border-t border-slate-100">
               <button
@@ -248,7 +211,7 @@ export function ResolverSolicitudModal({
                 disabled={submitting}
                 className="w-full sm:w-auto justify-center min-h-[42px] px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white text-xs font-semibold"
               >
-                {submitting ? 'Procesando transacción...' : `Confirmar ${draft.data.dictamen}`}
+                {submitting ? 'Procesando...' : `Confirmar ${draft.data.dictamen}`}
               </button>
             </div>
           </form>

@@ -22,7 +22,7 @@ export function DocumentosTareaPanel({
   const [busyVersionId, setBusyVersionId] = useState<string | null>(null);
 
   const canUpload = actorRol === 'OP' || actorRol === 'GS';
-  const canDesignateOfficial = actorRol === 'GS'; // PER-007: EXCLUSIVO Gerencia de Sede
+  const canDesignateOfficial = actorRol === 'GS';
 
   const handleSetVigente = async (versionId: string) => {
     setBusyVersionId(versionId);
@@ -45,11 +45,11 @@ export function DocumentosTareaPanel({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h3 className="text-sm font-bold text-slate-900">
-            Documentos de la Tarea (Versionado Consecutivo v1, v2, v3...)
+            Documentos de la Tarea (Versionado v1, v2, v3...)
           </h3>
           <p className="text-xs text-slate-500">
-            Cada documento mantiene su propio historial y una única versión Oficial / Vigente designada exclusivamente
-            por Gerencia de Sede (PER-007).
+            Cada documento mantiene su historial de versiones y una única versión Oficial / Vigente designada por
+            Gerencia de Sede.
           </p>
         </div>
 
@@ -118,14 +118,13 @@ export function DocumentosTareaPanel({
                         <span className="font-medium text-slate-800 truncate">{v.nombre_original}</span>
                         {v.hash_duplicado_en_documento && (
                           <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 text-[10px] font-semibold">
-                            SHA-256 repetido en este doc
+                            Archivo idéntico a una versión anterior
                           </span>
                         )}
                       </div>
                       <p className="text-slate-600 break-words">{v.descripcion_cambio}</p>
                       <p className="text-[11px] text-slate-400 font-mono break-all">
-                        Autor: {v.autor_nombre ?? v.autor_id} · {formatMexicoCityDateTime(v.creado_en)} · SHA-256:{' '}
-                        {v.hash_sha256.slice(0, 16)}...
+                        Autor: {v.autor_nombre ?? v.autor_id} · {formatMexicoCityDateTime(v.creado_en)}
                       </p>
                     </div>
 
@@ -150,7 +149,7 @@ export function DocumentosTareaPanel({
                           </button>
                         ) : (
                           <span
-                            title="PER-007: Exclusivo Gerencia de Sede (DN y OP no tienen este permiso)"
+                            title="Exclusivo de Gerencia de Sede"
                             className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-400 cursor-not-allowed"
                           >
                             <Lock className="w-3.5 h-3.5" /> Solo GS

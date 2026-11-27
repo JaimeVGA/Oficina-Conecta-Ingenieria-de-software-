@@ -81,8 +81,8 @@ export function CrearTareaModal({
       <div className="bg-white w-full max-w-xl max-h-[92dvh] sm:max-h-[90dvh] overflow-y-auto rounded-t-2xl sm:rounded-xl shadow-2xl p-4 sm:p-6 pb-[max(1.25rem,env(safe-area-inset-bottom))] space-y-4">
         <div className="flex items-start justify-between border-b border-slate-200 pb-3">
           <div>
-            <h3 className="text-base font-bold text-slate-900">Nueva Tarea de Sede (RF-001)</h3>
-            <p className="text-xs text-slate-500">Nace con sequence_ics = 0 y emite aviso simulado ASIGNACION.</p>
+            <h3 className="text-base font-bold text-slate-900">Nueva Tarea</h3>
+            <p className="text-xs text-slate-500">Asigna una nueva tarea y notifica automáticamente al responsable.</p>
           </div>
           <button
             type="button"
@@ -94,9 +94,11 @@ export function CrearTareaModal({
           </button>
         </div>
 
-        <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5 text-[11px] font-semibold text-amber-900">
-          {draft.draftLabel}
-        </div>
+        {draft.hasRestoredDraft && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5 text-[11px] font-medium text-amber-900">
+            Se restauró tu borrador guardado localmente.
+          </div>
+        )}
 
         {errorMsg && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-xs text-red-800 flex items-center gap-2">

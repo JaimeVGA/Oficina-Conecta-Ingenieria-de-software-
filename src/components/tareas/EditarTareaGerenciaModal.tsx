@@ -14,12 +14,10 @@ export function EditarTareaGerenciaModal({
   onClose: () => void;
   onUpdated: () => void;
 }) {
-  const demoTools = process.env.NEXT_PUBLIC_ENABLE_DEMO_TOOLS !== 'false';
   const [titulo, setTitulo] = useState(tarea.titulo);
   const [fechaLocal, setFechaLocal] = useState(toMexicoCityInputValue(tarea.fecha_limite));
   const [estado, setEstado] = useState<EstadoTarea>(tarea.estado);
   const [motivoCambio, setMotivoCambio] = useState('');
-  const [diferirCp004, setDiferirCp004] = useState(false);
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -37,7 +35,6 @@ export function EditarTareaGerenciaModal({
           fecha_limite: mexicoCityLocalToIso(fechaLocal),
           estado,
           motivo_cambio: motivoCambio,
-          diferir_invalidacion_cp004: diferirCp004,
         }),
       });
       const json = (await res.json()) as { ok?: boolean; message?: string };
@@ -59,7 +56,7 @@ export function EditarTareaGerenciaModal({
           <div>
             <h3 className="text-base font-bold text-slate-900">Administrar Tarea — {tarea.folio}</h3>
             <p className="text-xs text-slate-500">
-              Cambiar fecha límite incrementa <code>sequence_ics</code> e invalida solicitudes pendientes.
+              Cambiar la fecha límite actualiza el calendario e invalida solicitudes pendientes de revisión.
             </p>
           </div>
           <button
@@ -132,21 +129,6 @@ export function EditarTareaGerenciaModal({
               className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm"
             />
           </div>
-
-          {demoTools && (
-            <label className="flex items-start gap-2 p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-900">
-              <input
-                type="checkbox"
-                checked={diferirCp004}
-                onChange={(e) => setDiferirCp004(e.target.checked)}
-                className="mt-0.5"
-              />
-              <span>
-                <strong>Modo prueba CP-004:</strong> Diferir invalidación automática hasta que el autorizador haga clic
-                en &quot;Aprobar/Rechazar&quot; en su pantalla ya abierta.
-              </span>
-            </label>
-          )}
 
           <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2 border-t border-slate-100">
             <button

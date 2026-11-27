@@ -37,7 +37,7 @@ export function AvanceOperativoForm({
       }
       setMsg(
         estado === 'COMPLETADA'
-          ? 'Tarea completada. Los recordatorios programados pendientes fueron cancelados (RN-006).'
+          ? 'Tarea completada. Los recordatorios programados pendientes fueron cancelados.'
           : 'Avance actualizado correctamente.'
       );
       onUpdated();

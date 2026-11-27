@@ -14,7 +14,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 
-const DEMO_ACCOUNTS = [
+const TEST_ACCOUNTS = [
   {
     correo: 'roberto.salinas@oficinaconecta.mx',
     nombre: 'Roberto Salinas',
@@ -69,13 +69,12 @@ function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const reason = searchParams.get('reason');
-  const demoTools = process.env.NEXT_PUBLIC_ENABLE_DEMO_TOOLS !== 'false';
 
-  const [email, setEmail] = useState(demoTools ? 'carlos.mendez@oficinaconecta.mx' : '');
-  const [password, setPassword] = useState(demoTools ? 'OficinaConecta2026!' : '');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPasswordInput, setShowPasswordInput] = useState(false);
   const [showDemoPass, setShowDemoPass] = useState(false);
-  const [showMobileAccounts, setShowMobileAccounts] = useState(false);
+  const [showAccounts, setShowAccounts] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -105,11 +104,7 @@ function LoginContent() {
 
   return (
     <div className="min-h-[100dvh] bg-slate-900 flex items-start md:items-center justify-center px-3 py-5 sm:p-6 pt-[max(1.25rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))]">
-      <div
-        className={`w-full bg-white rounded-2xl shadow-2xl overflow-hidden ${
-          demoTools ? 'max-w-4xl grid grid-cols-1 md:grid-cols-2' : 'max-w-md'
-        }`}
-      >
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
         <div className="min-w-0 p-5 sm:p-8 space-y-5 sm:space-y-6">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 shrink-0 rounded-xl bg-brand-600 text-white font-bold flex items-center justify-center">
@@ -117,7 +112,7 @@ function LoginContent() {
             </div>
             <div className="min-w-0">
               <h1 className="text-xl font-bold text-slate-900">Oficina Conecta</h1>
-              <p className="text-xs text-slate-500">Acceso Autenticado · Grupo 502-A Equipo I</p>
+              <p className="text-xs text-slate-500">Plataforma de Gestión Multisede</p>
             </div>
           </div>
 
@@ -130,8 +125,7 @@ function LoginContent() {
               <div className="min-w-0">
                 <p className="font-semibold">Sesión cerrada por inactividad (15 minutos)</p>
                 <p className="mt-0.5 break-words">
-                  Todos los borradores locales en <code>sessionStorage</code> fueron purgados. Autentíquese nuevamente
-                  para continuar.
+                  Por seguridad, tu sesión se cerró automáticamente. Inicia sesión nuevamente para continuar.
                 </p>
               </div>
             </div>
@@ -202,50 +196,44 @@ function LoginContent() {
           <div className="pt-4 border-t border-slate-100 text-[11px] text-slate-500 space-y-1.5">
             <p className="flex items-start gap-1.5">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
-              <span>Sedes piloto cerradas: CDMX, Oaxaca de Juárez y Puebla de Zaragoza.</span>
+              <span>Sedes activas: CDMX, Oaxaca de Juárez y Puebla de Zaragoza.</span>
             </p>
             <p className="flex items-start gap-1.5">
               <Lock className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
-              <span>Advertencia de inactividad a los 13 min y cierre con purga a los 15 min.</span>
+              <span>Por seguridad, la sesión se cierra automáticamente tras 15 minutos de inactividad.</span>
             </p>
           </div>
         </div>
 
-        {demoTools && (
-          <div className="min-w-0 bg-slate-50 p-4 sm:p-6 border-t md:border-t-0 md:border-l border-slate-200 flex flex-col justify-between">
-            <div>
-              {/* Acordeón en móvil para mantener login visible sin scroll excesivo */}
-              <button
-                type="button"
-                onClick={() => setShowMobileAccounts((v) => !v)}
-                aria-expanded={showMobileAccounts}
-                className="md:hidden w-full min-h-[44px] flex items-center justify-between gap-2 text-xs font-bold uppercase tracking-wider text-slate-600"
-              >
-                <span className="flex items-center gap-1.5 min-w-0">
-                  <Building2 className="w-4 h-4 shrink-0 text-brand-600" />
-                  <span className="truncate">Cuentas Piloto ({DEMO_ACCOUNTS.length})</span>
-                </span>
-                {showMobileAccounts ? (
-                  <ChevronUp className="w-4 h-4 shrink-0" />
-                ) : (
-                  <ChevronDown className="w-4 h-4 shrink-0" />
-                )}
-              </button>
+        <div className="min-w-0 bg-slate-50 px-5 py-3.5 sm:px-8 border-t border-slate-200">
+          <button
+            type="button"
+            onClick={() => setShowAccounts((v) => !v)}
+            aria-expanded={showAccounts}
+            className="w-full min-h-[44px] flex items-center justify-between gap-2 text-xs font-bold uppercase tracking-wider text-slate-600"
+          >
+            <span className="flex items-center gap-1.5 min-w-0">
+              <Building2 className="w-4 h-4 shrink-0 text-brand-600" />
+              <span className="truncate">Perfiles de prueba ({TEST_ACCOUNTS.length})</span>
+            </span>
+            {showAccounts ? (
+              <ChevronUp className="w-4 h-4 shrink-0" />
+            ) : (
+              <ChevronDown className="w-4 h-4 shrink-0" />
+            )}
+          </button>
 
-              <h2 className="hidden md:flex text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 items-center gap-1.5">
-                <Building2 className="w-4 h-4 shrink-0" />
-                Cuentas Piloto para Demostración
-              </h2>
-
-              <div className={`${showMobileAccounts ? 'mt-3 block' : 'hidden'} md:block space-y-1.5`}>
-                {DEMO_ACCOUNTS.map((acc) => (
+          {showAccounts && (
+            <>
+              <div className="mt-3 space-y-1.5 max-h-72 overflow-y-auto pr-0.5">
+                {TEST_ACCOUNTS.map((acc) => (
                   <button
                     key={acc.correo}
                     type="button"
                     onClick={() => {
                       setEmail(acc.correo);
                       setPassword('OficinaConecta2026!');
-                      setShowMobileAccounts(false);
+                      setShowAccounts(false);
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
                     className={`w-full min-h-[44px] text-left px-3 py-2 rounded-lg border text-xs transition-colors ${
@@ -266,24 +254,24 @@ function LoginContent() {
                   </button>
                 ))}
               </div>
-            </div>
 
-            <div className="mt-4 pt-3 border-t border-slate-200/70 text-[11px] text-slate-500 flex flex-wrap items-center justify-between gap-2">
-              <span>Contraseña piloto:</span>
-              {showDemoPass ? (
-                <code className="bg-slate-200 px-1.5 py-0.5 rounded break-all">OficinaConecta2026!</code>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setShowDemoPass(true)}
-                  className="min-h-[36px] text-brand-600 font-semibold hover:underline"
-                >
-                  Mostrar clave demo
-                </button>
-              )}
-            </div>
-          </div>
-        )}
+              <div className="mt-3 pt-3 border-t border-slate-200/70 text-[11px] text-slate-500 flex flex-wrap items-center justify-between gap-2">
+                <span>Contraseña:</span>
+                {showDemoPass ? (
+                  <code className="bg-slate-200 px-1.5 py-0.5 rounded break-all">OficinaConecta2026!</code>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setShowDemoPass(true)}
+                    className="min-h-[36px] text-brand-600 font-semibold hover:underline"
+                  >
+                    Mostrar clave
+                  </button>
+                )}
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

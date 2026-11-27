@@ -77,14 +77,14 @@ export function TareaDetalleClient({
         </Link>
 
         <div className="w-full sm:w-auto flex flex-wrap items-center gap-2">
-          <ExportIcsButton tareaId={tarea.id} label={`Exportar .ics (seq ${tarea.sequence_ics})`} />
+          <ExportIcsButton tareaId={tarea.id} label="Exportar calendario (.ics)" />
           {actor.rol === 'GS' && (
             <button
               type="button"
               onClick={() => setShowEditarGsModal(true)}
               className="flex-1 sm:flex-initial justify-center min-h-[40px] inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-800"
             >
-              <CalendarCog className="w-4 h-4 text-brand-600" /> Administrar Tarea (GS)
+              <CalendarCog className="w-4 h-4 text-brand-600" /> Administrar Tarea
             </button>
           )}
           {canRequestAuth && (
@@ -109,9 +109,6 @@ export function TareaDetalleClient({
               </span>
               <span className="font-mono text-xs px-2 py-0.5 rounded bg-slate-100 text-slate-700">
                 {tarea.estado} ({tarea.porcentaje_avance}%)
-              </span>
-              <span className="font-mono text-xs px-2 py-0.5 rounded bg-slate-100 text-slate-700">
-                ICS SEQUENCE:{tarea.sequence_ics}
               </span>
             </div>
             <h1 className="text-xl font-bold text-slate-900 mt-2 break-words">{tarea.titulo}</h1>
@@ -143,7 +140,7 @@ export function TareaDetalleClient({
         {actor.rol === 'OP' && (
           <div className="pt-4 border-t border-slate-100">
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
-              Registrar Avance Operativo (PER-001)
+              Registrar Avance Operativo
             </h3>
             <AvanceOperativoForm tarea={tarea} onUpdated={refreshAll} />
           </div>
@@ -208,11 +205,11 @@ export function TareaDetalleClient({
         )}
       </div>
 
-      {/* Bitácora de la Tarea */}
+      {/* Historial de Autorizaciones de la Tarea */}
       <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-3">
         <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
           <ShieldAlert className="w-4 h-4 text-emerald-600" />
-          Bitácora Append-Only de la Tarea ({bitacora.length})
+          Historial de Autorizaciones de la Tarea ({bitacora.length})
         </h3>
         {bitacora.length === 0 ? (
           <p className="text-xs text-slate-500">Sin resoluciones registradas en bitácora.</p>

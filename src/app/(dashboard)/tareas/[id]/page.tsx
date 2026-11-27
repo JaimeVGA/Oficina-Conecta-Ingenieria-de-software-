@@ -18,7 +18,7 @@ export default async function TareaDetallePage({ params }: { params: { id: strin
   if (!tarea) {
     return (
       <div className="bg-white border border-red-200 rounded-xl p-6 space-y-3">
-        <h1 className="text-base font-bold text-red-800">ERR-001: Acceso denegado o tarea no encontrada</h1>
+        <h1 className="text-base font-bold text-red-800">Acceso denegado o tarea no encontrada</h1>
         <p className="text-xs text-slate-600">
           La tarea solicitada pertenece a otro responsable o a una sede fuera de su alcance permitido.
         </p>

@@ -72,10 +72,10 @@ export function TareasListClient({
           <h1 className="text-xl font-bold text-slate-900">Gestión y Seguimiento de Tareas</h1>
           <p className="text-xs text-slate-500 mt-0.5">
             {actor.rol === 'OP'
-              ? 'Aislamiento PER-001: visualizando exclusivamente sus tareas asignadas.'
+              ? 'Visualizando tus tareas asignadas.'
               : actor.rol === 'GS'
-                ? `Aislamiento PER-002: administración completa de tareas en su sede (${actor.sede_id}).`
-                : 'Supervisión PER-003: consulta global de las 3 sedes sin edición local.'}
+                ? `Administración de tareas en tu sede (${actor.sede_id}).`
+                : 'Consulta global de tareas en todas las sedes.'}
           </p>
         </div>
 
@@ -153,7 +153,6 @@ export function TareasListClient({
                     {t.estado} ({t.porcentaje_avance}%)
                   </span>
                 </div>
-                <span className="font-mono text-[11px] text-slate-500">v{t.sequence_ics}</span>
               </div>
 
               <div>
@@ -197,14 +196,13 @@ export function TareasListClient({
               <th className="px-4 py-3">Responsable</th>
               <th className="px-4 py-3">Fecha Límite (MX)</th>
               <th className="px-4 py-3">Estado / Avance</th>
-              <th className="px-4 py-3">ICS Seq</th>
               <th className="px-4 py-3 text-right">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-slate-500">
+                <td colSpan={6} className="px-4 py-8 text-center text-slate-500">
                   No se encontraron tareas con los filtros seleccionados.
                 </td>
               </tr>
@@ -229,7 +227,6 @@ export function TareasListClient({
                     </span>
                     <span className="ml-1.5 text-slate-600 font-semibold">{t.porcentaje_avance}%</span>
                   </td>
-                  <td className="px-4 py-3 font-mono">v{t.sequence_ics}</td>
                   <td className="px-4 py-3 text-right space-x-2">
                     <Link
                       href={`/tareas/${t.id}`}

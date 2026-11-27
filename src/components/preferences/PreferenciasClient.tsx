@@ -44,19 +44,19 @@ const AVATAR_PRESETS: { id: AvatarPreset; label: string; dotClass: string }[] = 
 
 const RBAC_PERMISSIONS_BY_ROLE: Record<RolUsuario, string[]> = {
   DN: [
-    'PER-003: Consulta transversal global de las 3 sedes, métricas y bitácora',
-    'PER-005: Resuelve prórrogas > 5 días, que alteren fin de proyecto, cambios de alcance y solicitudes de gerentes',
-    'PER-007 (Restricción): No designa vigencia documental local ni edita tareas de sede',
+    'Consulta transversal de todas las sedes, métricas y bitácora',
+    'Resuelve prórrogas mayores a 5 días, cambios de alcance y solicitudes de gerentes',
+    'Consulta global en modo supervisión sin edición directa de tareas locales',
   ],
   GS: [
-    'PER-002: Administra departamentos, proyectos, tareas y asignaciones de su sede',
-    'PER-004: Resuelve prórrogas locales ≤ 5 días naturales dentro del fin del proyecto',
-    'PER-006 y PER-007: Sube versiones y es el ÚNICO rol autorizado para designar Versión Oficial / Vigente',
+    'Administra departamentos, proyectos, tareas y asignaciones de su sede',
+    'Resuelve prórrogas locales de hasta 5 días dentro del fin del proyecto',
+    'Sube versiones documentales y designa la Versión Oficial / Vigente',
   ],
   OP: [
-    'PER-001: Consulta y registra avances exclusivamente sobre sus tareas asignadas',
-    'PER-006: Sube revisiones documentales (v1, v2, v3) en sus tareas asignadas',
-    'RF-002: Emite solicitudes idempotentes de prórroga de fecha o cambio de alcance',
+    'Consulta y registra avances sobre sus tareas asignadas',
+    'Sube revisiones documentales (v1, v2, v3) en sus tareas asignadas',
+    'Emite solicitudes de prórroga de fecha o cambio de alcance',
   ],
 };
 
@@ -565,7 +565,7 @@ export function PreferenciasClient({
                   id: 'es-MX' as Locale,
                   name: 'Español (México)',
                   code: 'es-MX',
-                  note: 'Idioma contractual predeterminado · America/Mexico_City',
+                  note: 'Idioma predeterminado · America/Mexico_City',
                 },
                 {
                   id: 'en-US' as Locale,

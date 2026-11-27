@@ -51,12 +51,11 @@ export function SolicitudFormModal({
   const [successInfo, setSuccessInfo] = useState<{
     folio: string;
     rol_resolver: string;
-    idempotent_replay?: boolean;
   } | null>(null);
 
   const previewRouting = useMemo(() => {
     if (draft.data.tipo === 'CAMBIO_ALCANCE') {
-      return { rol: 'DN', reason: 'Todo cambio de alcance resuelve Dirección Nacional (RN-001).' };
+      return { rol: 'DN', reason: 'Todo cambio de alcance lo resuelve Dirección Nacional.' };
     }
     try {
       const propIso = mexicoCityLocalToIso(draft.data.fechaPropuestaLocal);
@@ -94,7 +93,7 @@ export function SolicitudFormModal({
     }
 
     if (draft.data.motivo.trim().length === 0) {
-      setErrorMsg('ERR-002: El motivo de la solicitud es obligatorio (no puede estar vacío).');
+      setErrorMsg('El motivo de la solicitud es obligatorio.');
       return;
     }
 
@@ -126,7 +125,6 @@ export function SolicitudFormModal({
         ok?: boolean;
         folio?: string;
         rol_resolver?: string;
-        idempotent_replay?: boolean;
         message?: string;
       };
 
@@ -139,13 +137,12 @@ export function SolicitudFormModal({
       setSuccessInfo({
         folio: json.folio ?? '',
         rol_resolver: json.rol_resolver ?? 'GS',
-        idempotent_replay: json.idempotent_replay,
       });
       onSuccess();
     } catch {
       setFailedAfterNetworkCut(true);
       setErrorMsg(
-        'Sin conexión con el servidor central: los cambios no se han guardado. Puede reintentar conservando la misma clave de idempotencia.'
+        'Sin conexión con el servidor central: los cambios no se han guardado. Puedes reintentar cuando recuperes la conexión.'
       );
     } finally {
       setSubmitting(false);
@@ -170,18 +167,15 @@ export function SolicitudFormModal({
           </button>
         </div>
 
-        {!successInfo && (
-          <div className="flex flex-wrap items-center justify-between gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs">
-            <span className="font-semibold text-amber-900">{draft.draftLabel}</span>
-            <span className="font-mono text-[11px] text-amber-800 break-all">
-              Idempotency-Key: {draft.idempotencyKey}
-            </span>
+        {!successInfo && draft.hasRestoredDraft && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs font-medium text-amber-900">
+            Se restauró tu borrador guardado localmente.
           </div>
         )}
 
         {justReconnected && !successInfo && (
           <div className="bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 text-xs text-emerald-900 font-medium">
-            Conexión restablecida. Revise su información antes de enviar.
+            Conexión restablecida. Revise su información antes de enviar (no se realizó envío automático).
           </div>
         )}
 
@@ -203,7 +197,7 @@ export function SolicitudFormModal({
           <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 space-y-2 text-sm text-emerald-900">
             <div className="flex items-center gap-2 font-bold">
               <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-              Solicitud {successInfo.folio} registrada ({successInfo.idempotent_replay ? 'Reintento idempotente sin duplicar' : 'Nuevo folio'})
+              Solicitud {successInfo.folio} registrada
             </div>
             <p className="text-xs">
               Estado: <code>PENDIENTE_REVISION</code> · Asignada para resolución a:{' '}
@@ -232,7 +226,7 @@ export function SolicitudFormModal({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Tipo de autorización (OBJ-02)</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Tipo de solicitud</label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {(['PRORROGA_FECHA', 'CAMBIO_ALCANCE'] as const).map((t) => (
                   <button
@@ -282,13 +276,11 @@ export function SolicitudFormModal({
             )}
 
             <div className="bg-indigo-50 border border-indigo-200 rounded-lg px-3 py-2 text-xs text-indigo-900">
-              <strong>Enrutamiento RN-001:</strong> {previewRouting.reason}
+              <strong>Flujo de aprobación:</strong> {previewRouting.reason}
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Motivo / Justificación obligatoria (RN-002)
-              </label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Motivo / Justificación</label>
               <textarea
                 rows={3}
                 value={draft.data.motivo}
@@ -312,11 +304,7 @@ export function SolicitudFormModal({
                 className="w-full sm:w-auto justify-center min-h-[42px] inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white text-xs font-semibold"
               >
                 {failedAfterNetworkCut ? <RefreshCw className="w-4 h-4" /> : <Send className="w-4 h-4" />}
-                {submitting
-                  ? 'Enviando...'
-                  : failedAfterNetworkCut
-                    ? 'Reintentar envío (mismo UUID)'
-                    : 'Enviar Solicitud'}
+                {submitting ? 'Enviando...' : failedAfterNetworkCut ? 'Reintentar envío' : 'Enviar Solicitud'}
               </button>
             </div>
           </form>
