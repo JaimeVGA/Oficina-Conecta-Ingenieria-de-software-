@@ -1,0 +1,164 @@
+================================================================================
+REPORTE EJECUTIVO DE MÉTRICAS DE CALIDAD
+Proyecto: Oficina Conecta — Plataforma de Gestión Multisede
+Dirigido a: Dirección Nacional de Operaciones (Cliente)
+================================================================================
+
+1. INTRODUCCIÓN
+
+Para asegurar que Oficina Conecta funcione de manera confiable en la operación
+diaria de las sedes de Ciudad de México, Oaxaca de Juárez y Puebla de Zaragoza,
+el equipo de desarrollo controla el proyecto mediante cinco métricas formales de
+calidad acordadas desde el inicio: QA Metrics, Defect Metrics, Security
+Responses, Pull Request y Agile Metrics.
+
+A continuación se explica, de forma directa y sin tecnicismos, qué mide cada
+una, cuál es su meta y cómo protege los intereses y reglas de su empresa.
+
+
+--------------------------------------------------------------------------------
+2. LAS CINCO MÉTRICAS DE CALIDAD APLICADAS AL PROYECTO
+--------------------------------------------------------------------------------
+
+1) QA Metrics (Aseguramiento de la Calidad)
+--------------------------------------------------------------------------------
+Qué mide:
+El porcentaje de escenarios críticos del sistema que ya fueron comprobados con
+evidencia real frente al total de escenarios comprometidos para la entrega.
+
+Meta establecida:
+Alcanzar el 100% de los casos clave de esta etapa comprobados antes de la
+revisión final.
+
+Cómo se aplica en Oficina Conecta:
+  * Ninguna función se considera terminada solo porque la pantalla se vea bien;
+    cada requisito debe superar pruebas reales con un punto de partida, una
+    acción concreta y un resultado comprobable.
+  * El seguimiento separa con claridad lo que ya fue verificado (protección del
+    historial, autorizaciones simultáneas, cortes de internet, invalidación por
+    cambio de fecha y reglas de recordatorios) de lo que quedó programado para
+    la siguiente fase (validación directa en Google Calendar y Mozilla
+    Thunderbird).
+
+
+2) Defect Metrics (Control de Defectos Críticos)
+--------------------------------------------------------------------------------
+Qué mide:
+La cantidad de fallas graves relacionadas con inconsistencias entre lo aprobado y
+lo aplicado en las tareas, o con registros duplicados.
+
+Meta establecida:
+0 defectos críticos al entregar la plataforma.
+
+Cómo se aplica en Oficina Conecta:
+  * Autorización e historial inseparables: cuando un gerente o la Dirección
+    Nacional aprueba o rechaza una prórroga o un cambio de alcance, la decisión,
+    la actualización de la tarea, el asiento en el historial y la reprogramación
+    de avisos ocurren como una sola operación. Si fallara el guardado del
+    historial, todo el movimiento se anula automáticamente para que jamás exista
+    una aprobación registrada cuyo cambio no se haya aplicado.
+  * Control de decisiones simultáneas: si dos responsables intentan resolver la
+    misma solicitud al mismo tiempo, el sistema procesa únicamente la primera
+    respuesta e informa a la segunda persona quién resolvió, cuál fue el
+    dictamen y en qué fecha y hora ocurrió.
+  * Protección contra cambios desactualizados: si la fecha límite de una tarea
+    cambia mientras una solicitud estaba pendiente, la solicitud pasa a estado
+    invalidado conservando tanto el motivo original como la razón por la que
+    quedó sin efecto.
+  * Cero duplicados ante fallas de internet: al perder conexión, el formulario
+    guarda un borrador temporal en el navegador y no se envía por sí solo al
+    volver la señal. Si un envío sí llegó al servidor pero el usuario presiona
+    reintentar por un corte visual, la plataforma reconoce la operación original
+    y evita crear solicitudes, resoluciones o avisos repetidos.
+
+
+3) Security Responses (Control de Seguridad y Permisos)
+--------------------------------------------------------------------------------
+Qué mide:
+La efectividad del sistema para bloquear cualquier intento de consulta,
+modificación o borrado fuera de las atribuciones de cada usuario y de cada sede.
+
+Meta establecida:
+100% de bloqueo efectivo ante accesos indebidos o intentos de alterar el
+historial.
+
+Cómo se aplica en Oficina Conecta:
+  * Aislamiento estricto por sede y puesto:
+    - Personal Operativo: solo consulta sus propias tareas asignadas, reporta
+      avances, sube revisiones documentales y envía solicitudes; no puede ver
+      tareas de otros compañeros ni de otras oficinas.
+    - Gerencia de Sede: administra departamentos, proyectos, tareas y prórrogas
+      de hasta cinco días naturales únicamente en su oficina, sin acceso a otras
+      sedes. Además, es el único rol autorizado para marcar qué versión de un
+      documento es la Oficial o Vigente.
+    - Dirección Nacional: supervisa de manera global las tres sedes y resuelve
+      prórrogas mayores a cinco días, cambios que muevan el cierre del proyecto,
+      cambios de alcance y solicitudes emitidas por gerentes, teniendo
+      bloqueada la edición directa de tareas y la vigencia documental local.
+  * Imparcialidad y resguardo del historial: nadie puede aprobar o rechazar su
+    propia solicitud, y ningún usuario tiene permiso para editar ni borrar
+    registros del historial de autorizaciones, ni desde la interfaz ni mediante
+    envíos externos directos.
+  * Protección automática por inactividad: a los 13 minutos sin actividad se
+    muestra una advertencia, y a los 15 minutos se cierra la sesión y se borra
+    de inmediato cualquier borrador pendiente en el navegador (incluso sin
+    internet), exigiendo volver a iniciar sesión para resguardar los datos en
+    equipos compartidos.
+
+
+4) Pull Request (Calidad en Integración y Control de Cambios)
+--------------------------------------------------------------------------------
+Qué mide:
+El porcentaje de mejoras o correcciones que cumplen al 100% con los acuerdos de
+alcance antes de integrarse a la versión principal que ven los usuarios.
+
+Meta establecida:
+100% de conformidad frente a los acuerdos aprobados en cada cambio incorporado.
+
+Cómo se aplica en Oficina Conecta:
+  * Cada modificación pasa por una revisión previa que verifica que no se agregue
+    ninguna función fuera de lo autorizado ni contradicciones con las reglas de
+    negocio (por ejemplo, manteniendo fuera módulos de presupuesto, firmas
+    digitales impropias, captura de direcciones de red de los empleados y
+    sincronizaciones automáticas externas).
+  * Antes de liberar cualquier cambio en línea se valida que todas las funciones
+    existentes sigan operando con normalidad, asegurando orden y estabilidad en
+    cada actualización.
+
+
+5) Agile Metrics (Flujo de Entrega y Avance Operativo)
+--------------------------------------------------------------------------------
+Qué mide:
+El porcentaje de integración real del recorrido operativo prioritario exigido
+para el control completo de las oficinas, desde el inicio hasta el cierre del
+flujo.
+
+Meta establecida:
+100% de los cinco pasos principales conectados y funcionando de extremo a
+extremo.
+
+Cómo se aplica en Oficina Conecta:
+  * En lugar de construir pantallas aisladas sin conexión entre sí, el trabajo se
+    organizó en entregas completas para poner en marcha los cinco eslabones
+    esenciales del proceso:
+    1. Asignación de la tarea por Gerencia de Sede.
+    2. Solicitud de prórroga o cambio de alcance con justificación obligatoria.
+    3. Resolución por la autoridad correspondiente (Gerencia o Dirección).
+    4. Actualización automática de la tarea y registro permanente en bitácora.
+    5. Emisión y ajuste automático de avisos y recordatorios preventivos.
+  * Sobre este flujo base operan también el control documental consecutivo (v1,
+    v2, v3...) con aviso cuando un archivo ya existía en ese mismo documento, la
+    gestión automática de recordatorios a 48 y 24 horas según el plazo real, la
+    exportación de calendario para actualizar fechas sin duplicar citas y un
+    tiempo de respuesta ágil de 2.5 segundos o menos en consultas y calendarios.
+
+
+--------------------------------------------------------------------------------
+3. CONCLUSIÓN
+--------------------------------------------------------------------------------
+
+El uso conjunto de QA Metrics, Defect Metrics, Security Responses, Pull Request
+y Agile Metrics asegura que Oficina Conecta opere bajo reglas claras, historial
+confiable, aislamiento real entre sedes y un flujo completo listo para respaldar
+la operación diaria de su organización.
+================================================================================
