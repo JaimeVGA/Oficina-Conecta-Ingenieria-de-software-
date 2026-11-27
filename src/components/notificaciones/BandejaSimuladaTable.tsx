@@ -65,7 +65,9 @@ export function BandejaSimuladaTable({ correos }: { correos: CorreoSimulado[] })
             </span>
           </div>
 
-          <h4 className="text-sm font-bold text-slate-900 break-words">{c.asunto}</h4>
+          <h4 className="text-sm font-bold text-slate-900 break-words">
+            {c.asunto.replace(/^\[SIMULADO\]\s*/i, '')}
+          </h4>
           <p className="text-xs text-slate-700 leading-relaxed break-words">{c.contenido}</p>
 
           <div className="pt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-slate-500">
