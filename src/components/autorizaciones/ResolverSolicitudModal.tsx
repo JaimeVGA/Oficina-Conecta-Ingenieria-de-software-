@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { CheckCircle2, ShieldAlert, X, XCircle } from 'lucide-react';
+import { CheckCircle2, ShieldAlert, WifiOff, X, XCircle } from 'lucide-react';
 import { useIdempotentDraft } from '@/hooks/useIdempotentDraft';
+import { useSessionGuard } from '@/components/session/SessionInactivityGuard';
+import { OFFLINE_ERROR_MESSAGE } from '@/lib/offline/client';
 import { formatMexicoCityDateTime } from '@/lib/dates/mexicoCity';
 import type { Dictamen, SolicitudEnriquecida } from '@/lib/supabase/types';
 
@@ -15,6 +17,8 @@ export function ResolverSolicitudModal({
   onClose: () => void;
   onResolved: () => void;
 }) {
+  const { effectiveOnline, justReconnected, reportNetworkFailure } = useSessionGuard();
+
   const draft = useIdempotentDraft<{ dictamen: Dictamen; motivo: string }>(
     `oc_draft_resolver_${solicitud.id}`,
     {
@@ -34,6 +38,11 @@ export function ResolverSolicitudModal({
   const handleResolve = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorPayload(null);
+
+    if (!effectiveOnline) {
+      setErrorPayload({ message: OFFLINE_ERROR_MESSAGE });
+      return;
+    }
 
     if (draft.data.motivo.trim().length === 0) {
       setErrorPayload({
@@ -69,7 +78,9 @@ export function ResolverSolicitudModal({
           motivo_original: json.motivo_original,
           motivo_invalidacion: json.motivo_invalidacion,
         });
-        onResolved();
+        if (effectiveOnline) {
+          onResolved();
+        }
         return;
       }
 
@@ -79,8 +90,9 @@ export function ResolverSolicitudModal({
       );
       onResolved();
     } catch {
+      reportNetworkFailure();
       setErrorPayload({
-        message: 'Error de conexión al intentar resolver. Por favor intenta nuevamente.',
+        message: OFFLINE_ERROR_MESSAGE,
       });
     } finally {
       setSubmitting(false);
@@ -121,13 +133,29 @@ export function ResolverSolicitudModal({
           </p>
         </div>
 
+        {!successMsg && draft.hasRestoredDraft && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs font-medium text-amber-900">
+            Se restauró tu borrador guardado localmente.
+          </div>
+        )}
+
+        {justReconnected && !successMsg && (
+          <div className="bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 text-xs text-emerald-900 font-medium">
+            Conexión restablecida. Revise su información antes de confirmar (no se realizó envío automático).
+          </div>
+        )}
+
         {errorPayload && (
           <div
             role="alert"
             className="bg-red-50 border border-red-200 rounded-lg p-3.5 text-xs text-red-900 space-y-1.5"
           >
             <div className="flex items-center gap-2 font-bold">
-              <ShieldAlert className="w-4 h-4 text-red-600 shrink-0" />
+              {effectiveOnline ? (
+                <ShieldAlert className="w-4 h-4 text-red-600 shrink-0" />
+              ) : (
+                <WifiOff className="w-4 h-4 text-red-600 shrink-0" />
+              )}
               <span>{errorPayload.message}</span>
             </div>
             {errorPayload.motivo_original && (

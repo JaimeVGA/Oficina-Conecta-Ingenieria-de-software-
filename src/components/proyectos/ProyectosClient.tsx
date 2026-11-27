@@ -1,7 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Building2, FolderPlus, Layers, Lock } from 'lucide-react';
+import { AlertCircle, Building2, CheckCircle2, FolderPlus, Layers, Lock, WifiOff } from 'lucide-react';
+import { useIdempotentDraft } from '@/hooks/useIdempotentDraft';
+import { useSessionGuard } from '@/components/session/SessionInactivityGuard';
+import { isNetworkError, OFFLINE_ERROR_MESSAGE } from '@/lib/offline/client';
 import type { Departamento, PerfilUsuario, Proyecto, Sede } from '@/lib/supabase/types';
 
 export function ProyectosClient({
@@ -15,65 +18,111 @@ export function ProyectosClient({
   initialDepartamentos: Departamento[];
   sedes: Sede[];
 }) {
+  const { effectiveOnline, justReconnected, reportNetworkFailure } = useSessionGuard();
+
   const [proyectos, setProyectos] = useState(initialProyectos);
   const [departamentos, setDepartamentos] = useState(initialDepartamentos);
-  const [newDeptoName, setNewDeptoName] = useState('');
-  const [nombreProyecto, setNombreProyecto] = useState('');
-  const [deptoId, setDeptoId] = useState(initialDepartamentos[0]?.id ?? '');
-  const [fechaFin, setFechaFin] = useState('2026-12-20');
-  const [descripcion, setDescripcion] = useState('');
-  const [feedback, setFeedback] = useState<string | null>(null);
+  const deptoDraft = useIdempotentDraft('oc_draft_nuevo_depto', { nombre: '' });
+  const proyectoDraft = useIdempotentDraft('oc_draft_nuevo_proyecto', {
+    nombre: '',
+    departamentoId: initialDepartamentos[0]?.id ?? '',
+    fechaFin: '2026-12-20',
+    descripcion: '',
+  });
+  const [savingDepto, setSavingDepto] = useState(false);
+  const [savingProyecto, setSavingProyecto] = useState(false);
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const canManage = actor.rol === 'GS';
 
   const reload = async () => {
-    const res = await fetch('/api/proyectos');
-    const json = (await res.json()) as { proyectos?: Proyecto[]; departamentos?: Departamento[] };
-    if (json.proyectos) setProyectos(json.proyectos);
-    if (json.departamentos) setDepartamentos(json.departamentos);
+    if (!effectiveOnline) return;
+    try {
+      const res = await fetch('/api/proyectos');
+      const json = (await res.json()) as { proyectos?: Proyecto[]; departamentos?: Departamento[] };
+      if (json.proyectos) setProyectos(json.proyectos);
+      if (json.departamentos) setDepartamentos(json.departamentos);
+    } catch (err) {
+      if (isNetworkError(err)) {
+        reportNetworkFailure();
+      }
+    }
   };
 
   const handleCreateDepto = async (e: React.FormEvent) => {
     e.preventDefault();
     setFeedback(null);
-    const res = await fetch('/api/proyectos', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'departamento', nombre: newDeptoName }),
-    });
-    const json = (await res.json()) as { ok?: boolean; message?: string };
-    if (!res.ok || !json.ok) {
-      setFeedback(json.message ?? 'Error al crear departamento.');
+
+    if (!effectiveOnline) {
+      setFeedback({ type: 'error', text: OFFLINE_ERROR_MESSAGE });
       return;
     }
-    setNewDeptoName('');
-    setFeedback('Departamento creado en su sede.');
-    await reload();
+
+    setSavingDepto(true);
+    try {
+      const res = await fetch('/api/proyectos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'departamento', nombre: deptoDraft.data.nombre }),
+      });
+      const json = (await res.json()) as { ok?: boolean; message?: string };
+      if (!res.ok || !json.ok) {
+        setFeedback({ type: 'error', text: json.message ?? 'Error al crear departamento.' });
+        return;
+      }
+      deptoDraft.updateDraft({ nombre: '' });
+      deptoDraft.clearDraft();
+      setFeedback({ type: 'success', text: 'Departamento creado en su sede.' });
+      await reload();
+    } catch {
+      reportNetworkFailure();
+      setFeedback({ type: 'error', text: OFFLINE_ERROR_MESSAGE });
+    } finally {
+      setSavingDepto(false);
+    }
   };
 
   const handleCreateProyecto = async (e: React.FormEvent) => {
     e.preventDefault();
     setFeedback(null);
-    const res = await fetch('/api/proyectos', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'proyecto',
-        departamento_id: deptoId,
-        nombre: nombreProyecto,
-        descripcion,
-        fecha_fin_proyecto: fechaFin,
-      }),
-    });
-    const json = (await res.json()) as { ok?: boolean; message?: string };
-    if (!res.ok || !json.ok) {
-      setFeedback(json.message ?? 'Error al crear proyecto.');
+
+    if (!effectiveOnline) {
+      setFeedback({ type: 'error', text: OFFLINE_ERROR_MESSAGE });
       return;
     }
-    setNombreProyecto('');
-    setDescripcion('');
-    setFeedback('Proyecto creado en su sede.');
-    await reload();
+
+    setSavingProyecto(true);
+    try {
+      const res = await fetch('/api/proyectos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'proyecto',
+          departamento_id: proyectoDraft.data.departamentoId,
+          nombre: proyectoDraft.data.nombre,
+          descripcion: proyectoDraft.data.descripcion,
+          fecha_fin_proyecto: proyectoDraft.data.fechaFin,
+        }),
+      });
+      const json = (await res.json()) as { ok?: boolean; message?: string };
+      if (!res.ok || !json.ok) {
+        setFeedback({ type: 'error', text: json.message ?? 'Error al crear proyecto.' });
+        return;
+      }
+      proyectoDraft.updateDraft((prev) => ({
+        ...prev,
+        nombre: '',
+        descripcion: '',
+      }));
+      proyectoDraft.clearDraft();
+      setFeedback({ type: 'success', text: 'Proyecto creado en su sede.' });
+      await reload();
+    } catch {
+      reportNetworkFailure();
+      setFeedback({ type: 'error', text: OFFLINE_ERROR_MESSAGE });
+    } finally {
+      setSavingProyecto(false);
+    }
   };
 
   return (
@@ -85,9 +134,37 @@ export function ProyectosClient({
         </p>
       </div>
 
+      {canManage && (deptoDraft.hasRestoredDraft || proyectoDraft.hasRestoredDraft) && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-2.5 text-xs text-amber-900 font-medium">
+          Se restauró tu borrador guardado localmente.
+        </div>
+      )}
+
+      {canManage && justReconnected && (deptoDraft.isDirty || proyectoDraft.isDirty) && (
+        <div className="bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-2.5 text-xs text-emerald-900 font-medium">
+          Conexión restablecida. Revise su información antes de guardar (no se realizó envío automático).
+        </div>
+      )}
+
       {feedback && (
-        <div className="bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-2.5 text-xs text-indigo-900 font-medium">
-          {feedback}
+        <div
+          role={feedback.type === 'error' ? 'alert' : 'status'}
+          className={`rounded-lg px-4 py-2.5 text-xs font-medium flex items-center gap-2 border ${
+            feedback.type === 'error'
+              ? 'bg-red-50 border-red-200 text-red-800'
+              : 'bg-emerald-50 border-emerald-200 text-emerald-900'
+          }`}
+        >
+          {feedback.type === 'error' ? (
+            effectiveOnline ? (
+              <AlertCircle className="w-4 h-4 shrink-0" />
+            ) : (
+              <WifiOff className="w-4 h-4 shrink-0" />
+            )
+          ) : (
+            <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+          )}
+          <span>{feedback.text}</span>
         </div>
       )}
 
@@ -110,16 +187,17 @@ export function ProyectosClient({
               <input
                 type="text"
                 required
-                value={newDeptoName}
-                onChange={(e) => setNewDeptoName(e.target.value)}
+                value={deptoDraft.data.nombre}
+                onChange={(e) => deptoDraft.updateDraft({ nombre: e.target.value })}
                 placeholder="Nuevo departamento en mi sede"
                 className="w-full sm:w-56 min-h-[40px] px-3 py-1.5 rounded-lg border border-slate-300 text-xs"
               />
               <button
                 type="submit"
-                className="min-h-[40px] inline-flex items-center justify-center px-3 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-semibold"
+                disabled={savingDepto}
+                className="min-h-[40px] inline-flex items-center justify-center px-3 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-semibold disabled:opacity-60"
               >
-                Agregar
+                {savingDepto ? 'Guardando...' : 'Agregar'}
               </button>
             </form>
           )}
@@ -153,8 +231,8 @@ export function ProyectosClient({
               <input
                 type="text"
                 required
-                value={nombreProyecto}
-                onChange={(e) => setNombreProyecto(e.target.value)}
+                value={proyectoDraft.data.nombre}
+                onChange={(e) => proyectoDraft.updateDraft((prev) => ({ ...prev, nombre: e.target.value }))}
                 className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm"
               />
             </div>
@@ -163,8 +241,8 @@ export function ProyectosClient({
               <label className="block text-xs font-semibold text-slate-700 mb-1">Departamento</label>
               <select
                 required
-                value={deptoId}
-                onChange={(e) => setDeptoId(e.target.value)}
+                value={proyectoDraft.data.departamentoId}
+                onChange={(e) => proyectoDraft.updateDraft((prev) => ({ ...prev, departamentoId: e.target.value }))}
                 className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm bg-white"
               >
                 {departamentos.map((d) => (
@@ -180,8 +258,8 @@ export function ProyectosClient({
               <input
                 type="date"
                 required
-                value={fechaFin}
-                onChange={(e) => setFechaFin(e.target.value)}
+                value={proyectoDraft.data.fechaFin}
+                onChange={(e) => proyectoDraft.updateDraft((prev) => ({ ...prev, fechaFin: e.target.value }))}
                 className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm"
               />
             </div>
@@ -191,17 +269,18 @@ export function ProyectosClient({
             <label className="block text-xs font-semibold text-slate-700 mb-1">Descripción</label>
             <input
               type="text"
-              value={descripcion}
-              onChange={(e) => setDescripcion(e.target.value)}
+              value={proyectoDraft.data.descripcion}
+              onChange={(e) => proyectoDraft.updateDraft((prev) => ({ ...prev, descripcion: e.target.value }))}
               className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm"
             />
           </div>
 
           <button
             type="submit"
-            className="w-full sm:w-auto min-h-[42px] px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold"
+            disabled={savingProyecto}
+            className="w-full sm:w-auto min-h-[42px] px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white text-xs font-semibold"
           >
-            Guardar Proyecto
+            {savingProyecto ? 'Guardando...' : 'Guardar Proyecto'}
           </button>
         </form>
       )}

@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { AlertTriangle, FileUp, X } from 'lucide-react';
+import { AlertTriangle, FileUp, WifiOff, X } from 'lucide-react';
+import { useSessionGuard } from '@/components/session/SessionInactivityGuard';
+import { OFFLINE_ERROR_MESSAGE } from '@/lib/offline/client';
 import { computeFileSha256 } from '@/lib/crypto/sha256';
 
 export function SubirVersionModal({
@@ -17,6 +19,7 @@ export function SubirVersionModal({
   onClose: () => void;
   onUploaded: () => void;
 }) {
+  const { effectiveOnline, reportNetworkFailure } = useSessionGuard();
   const [nombreDocumento, setNombreDocumento] = useState(initialDocumentName || existingDocumentNames[0] || '');
   const [descripcionCambio, setDescripcionCambio] = useState('');
   const [file, setFile] = useState<File | null>(null);
@@ -25,18 +28,22 @@ export function SubirVersionModal({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const checkHash = async (selectedFile: File, docName: string) => {
-    const hash = await computeFileSha256(selectedFile);
-    if (!docName.trim()) {
+    if (!effectiveOnline || !docName.trim()) {
       setDuplicateWarning(null);
       return;
     }
-    const res = await fetch(`/api/tareas/${tareaId}/documentos/verificar-hash`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre_documento: docName, hash_sha256: hash }),
-    });
-    const json = (await res.json()) as { advertencia?: string | null };
-    setDuplicateWarning(json.advertencia ?? null);
+    try {
+      const hash = await computeFileSha256(selectedFile);
+      const res = await fetch(`/api/tareas/${tareaId}/documentos/verificar-hash`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre_documento: docName, hash_sha256: hash }),
+      });
+      const json = (await res.json()) as { advertencia?: string | null };
+      setDuplicateWarning(json.advertencia ?? null);
+    } catch {
+      setDuplicateWarning(null);
+    }
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -51,6 +58,10 @@ export function SubirVersionModal({
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
+    if (!effectiveOnline) {
+      setErrorMsg(OFFLINE_ERROR_MESSAGE);
+      return;
+    }
     if (!file) {
       setErrorMsg('Debe seleccionar un archivo.');
       return;
@@ -78,6 +89,9 @@ export function SubirVersionModal({
       }
       onUploaded();
       onClose();
+    } catch {
+      reportNetworkFailure();
+      setErrorMsg(OFFLINE_ERROR_MESSAGE);
     } finally {
       setSubmitting(false);
     }
@@ -104,7 +118,10 @@ export function SubirVersionModal({
         </div>
 
         {errorMsg && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-xs text-red-800">{errorMsg}</div>
+          <div role="alert" className="bg-red-50 border border-red-200 rounded-lg p-3 text-xs text-red-800 flex items-center gap-2">
+            {!effectiveOnline && <WifiOff className="w-4 h-4 shrink-0" />}
+            <span>{errorMsg}</span>
+          </div>
         )}
 
         <form onSubmit={handleUpload} className="space-y-3">

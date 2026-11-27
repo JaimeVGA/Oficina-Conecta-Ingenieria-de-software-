@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Award, Download, FileText, FileUp, Lock } from 'lucide-react';
+import { Award, Download, FileText, FileUp, Lock, WifiOff } from 'lucide-react';
 import { SubirVersionModal } from '@/components/documentos/SubirVersionModal';
+import { useSessionGuard } from '@/components/session/SessionInactivityGuard';
+import { OFFLINE_ERROR_MESSAGE } from '@/lib/offline/client';
 import { formatMexicoCityDateTime } from '@/lib/dates/mexicoCity';
 import type { DocumentoConVersiones, RolUsuario } from '@/lib/supabase/types';
 
@@ -17,6 +19,7 @@ export function DocumentosTareaPanel({
   documentos: DocumentoConVersiones[];
   onChanged: () => void;
 }) {
+  const { effectiveOnline, reportNetworkFailure } = useSessionGuard();
   const [uploadDocName, setUploadDocName] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [busyVersionId, setBusyVersionId] = useState<string | null>(null);
@@ -25,8 +28,12 @@ export function DocumentosTareaPanel({
   const canDesignateOfficial = actorRol === 'GS';
 
   const handleSetVigente = async (versionId: string) => {
-    setBusyVersionId(versionId);
     setActionError(null);
+    if (!effectiveOnline) {
+      setActionError(OFFLINE_ERROR_MESSAGE);
+      return;
+    }
+    setBusyVersionId(versionId);
     try {
       const res = await fetch(`/api/documentos/versiones/${versionId}/vigente`, { method: 'POST' });
       const json = (await res.json()) as { ok?: boolean; message?: string };
@@ -35,6 +42,9 @@ export function DocumentosTareaPanel({
         return;
       }
       onChanged();
+    } catch {
+      reportNetworkFailure();
+      setActionError(OFFLINE_ERROR_MESSAGE);
     } finally {
       setBusyVersionId(null);
     }
@@ -66,7 +76,10 @@ export function DocumentosTareaPanel({
       </div>
 
       {actionError && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-xs text-red-800">{actionError}</div>
+        <div role="alert" className="bg-red-50 border border-red-200 rounded-lg p-3 text-xs text-red-800 flex items-center gap-2">
+          {!effectiveOnline && <WifiOff className="w-4 h-4 shrink-0" />}
+          <span>{actionError}</span>
+        </div>
       )}
 
       {documentos.length === 0 ? (

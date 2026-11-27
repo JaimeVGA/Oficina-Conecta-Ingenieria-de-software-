@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { AlertCircle, Plus, X } from 'lucide-react';
+import { AlertCircle, Plus, WifiOff, X } from 'lucide-react';
 import { useIdempotentDraft } from '@/hooks/useIdempotentDraft';
 import { useSessionGuard } from '@/components/session/SessionInactivityGuard';
+import { OFFLINE_ERROR_MESSAGE } from '@/lib/offline/client';
 import { mexicoCityLocalToIso, toMexicoCityInputValue } from '@/lib/dates/mexicoCity';
 import type { Departamento, PerfilUsuario, Proyecto } from '@/lib/supabase/types';
 
@@ -20,7 +21,7 @@ export function CrearTareaModal({
   onClose: () => void;
   onCreated: () => void;
 }) {
-  const { effectiveOnline } = useSessionGuard();
+  const { effectiveOnline, justReconnected, reportNetworkFailure } = useSessionGuard();
   const defaultDeadline = useMemo(
     () => toMexicoCityInputValue(new Date(Date.now() + 72 * 3600_000)),
     []
@@ -44,7 +45,7 @@ export function CrearTareaModal({
     e.preventDefault();
     setErrorMsg(null);
     if (!effectiveOnline) {
-      setErrorMsg('Sin conexión con el servidor central: los cambios no se han guardado.');
+      setErrorMsg(OFFLINE_ERROR_MESSAGE);
       return;
     }
     setSubmitting(true);
@@ -70,7 +71,8 @@ export function CrearTareaModal({
       onCreated();
       onClose();
     } catch {
-      setErrorMsg('Sin conexión con el servidor central: los cambios no se han guardado.');
+      reportNetworkFailure();
+      setErrorMsg(OFFLINE_ERROR_MESSAGE);
     } finally {
       setSubmitting(false);
     }
@@ -100,9 +102,22 @@ export function CrearTareaModal({
           </div>
         )}
 
+        {justReconnected && (
+          <div className="bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 text-xs text-emerald-900 font-medium">
+            Conexión restablecida. Revise su información antes de enviar (no se realizó envío automático).
+          </div>
+        )}
+
         {errorMsg && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-xs text-red-800 flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 shrink-0" />
+          <div
+            role="alert"
+            className="bg-red-50 border border-red-200 rounded-lg p-3 text-xs text-red-800 flex items-center gap-2"
+          >
+            {effectiveOnline ? (
+              <AlertCircle className="w-4 h-4 shrink-0" />
+            ) : (
+              <WifiOff className="w-4 h-4 shrink-0" />
+            )}
             <span>{errorMsg}</span>
           </div>
         )}

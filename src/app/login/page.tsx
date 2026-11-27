@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Suspense, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   AlertCircle,
@@ -12,7 +12,9 @@ import {
   Lock,
   LogIn,
   ShieldCheck,
+  WifiOff,
 } from 'lucide-react';
+import { clearOfflineUserCache, registerOfflineServiceWorker } from '@/lib/offline/client';
 
 const TEST_ACCOUNTS = [
   {
@@ -77,11 +79,35 @@ function LoginContent() {
   const [showAccounts, setShowAccounts] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isOnline, setIsOnline] = useState(true);
+
+  useEffect(() => {
+    void clearOfflineUserCache();
+    void registerOfflineServiceWorker();
+
+    setIsOnline(typeof navigator !== 'undefined' ? navigator.onLine : true);
+    const onOnline = () => setIsOnline(true);
+    const onOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', onOnline);
+    window.addEventListener('offline', onOffline);
+    return () => {
+      window.removeEventListener('online', onOnline);
+      window.removeEventListener('offline', onOffline);
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setErrorMsg(null);
+
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      setIsOnline(false);
+      setErrorMsg('Sin conexión con el servidor central. Verifica tu conexión a internet para iniciar sesión.');
+      return;
+    }
+
+    setLoading(true);
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
@@ -96,7 +122,7 @@ function LoginContent() {
       router.replace('/');
       router.refresh();
     } catch {
-      setErrorMsg('Sin conexión con el servidor central.');
+      setErrorMsg('Sin conexión con el servidor central. Verifica tu conexión a internet para iniciar sesión.');
     } finally {
       setLoading(false);
     }
@@ -105,6 +131,15 @@ function LoginContent() {
   return (
     <div className="min-h-[100dvh] bg-slate-900 flex items-start md:items-center justify-center px-3 py-5 sm:p-6 pt-[max(1.25rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))]">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
+        {!isOnline && (
+          <div
+            role="alert"
+            className="bg-red-600 text-white px-4 py-2.5 text-xs font-medium flex items-center gap-2"
+          >
+            <WifiOff className="w-4 h-4 shrink-0" />
+            <span>Sin conexión con el servidor central. Verifica tu conexión a internet para iniciar sesión.</span>
+          </div>
+        )}
         <div className="min-w-0 p-5 sm:p-8 space-y-5 sm:space-y-6">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 shrink-0 rounded-xl bg-brand-600 text-white font-bold flex items-center justify-center">

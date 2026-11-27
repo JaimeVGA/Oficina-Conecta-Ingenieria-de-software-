@@ -4,6 +4,7 @@ import React, { useMemo, useState } from 'react';
 import { AlertCircle, CheckCircle2, RefreshCw, Send, WifiOff, X } from 'lucide-react';
 import { useIdempotentDraft } from '@/hooks/useIdempotentDraft';
 import { useSessionGuard } from '@/components/session/SessionInactivityGuard';
+import { OFFLINE_ERROR_MESSAGE } from '@/lib/offline/client';
 import {
   diffNaturalDaysMX,
   formatMexicoCityDateTime,
@@ -31,7 +32,7 @@ export function SolicitudFormModal({
   onClose: () => void;
   onSuccess: () => void;
 }) {
-  const { effectiveOnline, justReconnected } = useSessionGuard();
+  const { effectiveOnline, justReconnected, reportNetworkFailure } = useSessionGuard();
 
   const defaultDuePlus4Days = useMemo(() => {
     const plus4 = new Date(Date.parse(tarea.fecha_limite) + 4 * 86_400_000);
@@ -88,7 +89,7 @@ export function SolicitudFormModal({
 
     if (!effectiveOnline) {
       setFailedAfterNetworkCut(true);
-      setErrorMsg('Sin conexión con el servidor central: los cambios no se han guardado.');
+      setErrorMsg(OFFLINE_ERROR_MESSAGE);
       return;
     }
 
@@ -140,9 +141,10 @@ export function SolicitudFormModal({
       });
       onSuccess();
     } catch {
+      reportNetworkFailure();
       setFailedAfterNetworkCut(true);
       setErrorMsg(
-        'Sin conexión con el servidor central: los cambios no se han guardado. Puedes reintentar cuando recuperes la conexión.'
+        `${OFFLINE_ERROR_MESSAGE} Puedes reintentar cuando recuperes la conexión.`
       );
     } finally {
       setSubmitting(false);

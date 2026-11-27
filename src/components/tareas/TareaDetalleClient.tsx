@@ -10,6 +10,8 @@ import { SolicitudFormModal } from '@/components/autorizaciones/SolicitudFormMod
 import { SolicitudEstadoBadge } from '@/components/autorizaciones/SolicitudEstadoBadge';
 import { ResolverSolicitudModal } from '@/components/autorizaciones/ResolverSolicitudModal';
 import { DocumentosTareaPanel } from '@/components/documentos/DocumentosTareaPanel';
+import { useSessionGuard } from '@/components/session/SessionInactivityGuard';
+import { isNetworkError } from '@/lib/offline/client';
 import { formatMexicoCityDateTime } from '@/lib/dates/mexicoCity';
 import type {
   BitacoraEnriquecida,
@@ -32,6 +34,7 @@ export function TareaDetalleClient({
   initialBitacora: BitacoraEnriquecida[];
   initialDocumentos: DocumentoConVersiones[];
 }) {
+  const { effectiveOnline, reportNetworkFailure } = useSessionGuard();
   const [tarea, setTarea] = useState(initialTarea);
   const [solicitudes, setSolicitudes] = useState(initialSolicitudes);
   const [bitacora, setBitacora] = useState(initialBitacora);
@@ -42,26 +45,33 @@ export function TareaDetalleClient({
   const [resolvingSolicitud, setResolvingSolicitud] = useState<SolicitudEnriquecida | null>(null);
 
   const refreshAll = async () => {
-    const [tRes, sRes, bRes, dRes] = await Promise.all([
-      fetch(`/api/tareas/${tarea.id}`),
-      fetch('/api/solicitudes'),
-      fetch(`/api/bitacora?tarea_id=${tarea.id}`),
-      fetch(`/api/tareas/${tarea.id}/documentos`),
-    ]);
+    if (!effectiveOnline) return;
+    try {
+      const [tRes, sRes, bRes, dRes] = await Promise.all([
+        fetch(`/api/tareas/${tarea.id}`),
+        fetch('/api/solicitudes'),
+        fetch(`/api/bitacora?tarea_id=${tarea.id}`),
+        fetch(`/api/tareas/${tarea.id}/documentos`),
+      ]);
 
-    const tJson = (await tRes.json()) as { tarea?: TareaEnriquecida };
-    if (tJson.tarea) setTarea(tJson.tarea);
+      const tJson = (await tRes.json()) as { tarea?: TareaEnriquecida };
+      if (tJson.tarea) setTarea(tJson.tarea);
 
-    const sJson = (await sRes.json()) as { solicitudes?: SolicitudEnriquecida[] };
-    if (sJson.solicitudes) {
-      setSolicitudes(sJson.solicitudes.filter((s) => s.tarea_id === tarea.id));
+      const sJson = (await sRes.json()) as { solicitudes?: SolicitudEnriquecida[] };
+      if (sJson.solicitudes) {
+        setSolicitudes(sJson.solicitudes.filter((s) => s.tarea_id === tarea.id));
+      }
+
+      const bJson = (await bRes.json()) as { registros?: BitacoraEnriquecida[] };
+      if (bJson.registros) setBitacora(bJson.registros);
+
+      const dJson = (await dRes.json()) as { documentos?: DocumentoConVersiones[] };
+      if (dJson.documentos) setDocumentos(dJson.documentos);
+    } catch (err) {
+      if (isNetworkError(err)) {
+        reportNetworkFailure();
+      }
     }
-
-    const bJson = (await bRes.json()) as { registros?: BitacoraEnriquecida[] };
-    if (bJson.registros) setBitacora(bJson.registros);
-
-    const dJson = (await dRes.json()) as { documentos?: DocumentoConVersiones[] };
-    if (dJson.documentos) setDocumentos(dJson.documentos);
   };
 
   const canRequestAuth =

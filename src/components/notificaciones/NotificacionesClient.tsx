@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, WifiOff } from 'lucide-react';
 import { BandejaSimuladaTable } from '@/components/notificaciones/BandejaSimuladaTable';
+import { useSessionGuard } from '@/components/session/SessionInactivityGuard';
+import { OFFLINE_ERROR_MESSAGE } from '@/lib/offline/client';
 import type { CorreoSimulado, EstadoAviso, MotivoAviso } from '@/lib/supabase/types';
 
 export function NotificacionesClient({
@@ -10,10 +12,12 @@ export function NotificacionesClient({
 }: {
   initialCorreos: CorreoSimulado[];
 }) {
+  const { effectiveOnline, reportNetworkFailure } = useSessionGuard();
   const [correos, setCorreos] = useState(initialCorreos);
   const [motivoFilter, setMotivoFilter] = useState<'TODOS' | MotivoAviso>('TODOS');
   const [estadoFilter, setEstadoFilter] = useState<'TODOS' | EstadoAviso>('TODOS');
   const [refreshing, setRefreshing] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     return correos.filter((c) => {
@@ -24,12 +28,24 @@ export function NotificacionesClient({
   }, [correos, motivoFilter, estadoFilter]);
 
   const refresh = async () => {
+    setErrorMsg(null);
+    if (!effectiveOnline) {
+      setErrorMsg(OFFLINE_ERROR_MESSAGE);
+      return;
+    }
     setRefreshing(true);
     try {
       await fetch('/api/notificaciones/simular-tiempo', { method: 'POST' }).catch(() => null);
       const res = await fetch('/api/notificaciones');
-      const json = (await res.json()) as { correos?: CorreoSimulado[] };
+      const json = (await res.json()) as { correos?: CorreoSimulado[]; message?: string };
+      if (!res.ok) {
+        setErrorMsg(json.message ?? 'No fue posible actualizar las notificaciones.');
+        return;
+      }
       if (json.correos) setCorreos(json.correos);
+    } catch {
+      reportNetworkFailure();
+      setErrorMsg(OFFLINE_ERROR_MESSAGE);
     } finally {
       setRefreshing(false);
     }
@@ -55,6 +71,16 @@ export function NotificacionesClient({
           {refreshing ? 'Actualizando...' : 'Actualizar'}
         </button>
       </div>
+
+      {errorMsg && (
+        <div
+          role="alert"
+          className="bg-red-50 border border-red-200 rounded-xl px-4 py-2.5 text-xs text-red-800 flex items-center gap-2"
+        >
+          {!effectiveOnline && <WifiOff className="w-4 h-4 shrink-0" />}
+          <span>{errorMsg}</span>
+        </div>
+      )}
 
       <div className="flex flex-wrap items-center gap-3 bg-white border border-slate-200 rounded-xl p-3">
         <select

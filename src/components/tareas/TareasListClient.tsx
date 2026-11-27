@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { ArrowRight, Plus, Search } from 'lucide-react';
 import { CrearTareaModal } from '@/components/tareas/CrearTareaModal';
 import { ExportIcsButton } from '@/components/tareas/ExportIcsButton';
+import { useSessionGuard } from '@/components/session/SessionInactivityGuard';
+import { isNetworkError } from '@/lib/offline/client';
 import { formatMexicoCityDateTime } from '@/lib/dates/mexicoCity';
 import type {
   Departamento,
@@ -30,6 +32,7 @@ export function TareasListClient({
   usuarios: PerfilUsuario[];
   sedes: Sede[];
 }) {
+  const { effectiveOnline, reportNetworkFailure } = useSessionGuard();
   const [tareas, setTareas] = useState(initialTareas);
   const [search, setSearch] = useState('');
   const [sedeFilter, setSedeFilter] = useState<string>('TODAS');
@@ -60,9 +63,16 @@ export function TareasListClient({
   }, [tareas, sedeFilter, estadoFilter, search]);
 
   const refresh = async () => {
-    const res = await fetch('/api/tareas');
-    const json = (await res.json()) as { tareas?: TareaEnriquecida[] };
-    if (json.tareas) setTareas(json.tareas);
+    if (!effectiveOnline) return;
+    try {
+      const res = await fetch('/api/tareas');
+      const json = (await res.json()) as { tareas?: TareaEnriquecida[] };
+      if (json.tareas) setTareas(json.tareas);
+    } catch (err) {
+      if (isNetworkError(err)) {
+        reportNetworkFailure();
+      }
+    }
   };
 
   return (

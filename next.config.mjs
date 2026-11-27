@@ -8,6 +8,7 @@ const cspDirectives = [
   "img-src 'self' data: blob:",
   "font-src 'self' data:",
   "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
+  "worker-src 'self'",
   "frame-ancestors 'none'",
   "object-src 'none'",
   "base-uri 'self'",
@@ -43,6 +44,13 @@ const nextConfig = {
       {
         source: '/api/(.*)',
         headers: [{ key: 'Cache-Control', value: 'no-store, max-age=0' }],
+      },
+      {
+        source: '/sw.js',
+        headers: [
+          { key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' },
+          { key: 'Service-Worker-Allowed', value: '/' },
+        ],
       },
     ];
   },

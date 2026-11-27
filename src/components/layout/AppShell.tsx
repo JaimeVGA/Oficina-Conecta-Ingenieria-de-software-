@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -13,14 +13,20 @@ import {
   LogOut,
   Menu,
   Moon,
+  RefreshCw,
   Settings,
   ShieldAlert,
   Sun,
+  WifiOff,
   X,
 } from 'lucide-react';
 import type { PerfilUsuario } from '@/lib/supabase/types';
 import { RoleBadge } from '@/components/layout/RoleBadge';
-import { NetworkStatusBanner, SessionInactivityGuard } from '@/components/session/SessionInactivityGuard';
+import {
+  NetworkStatusBanner,
+  SessionInactivityGuard,
+  useSessionGuard,
+} from '@/components/session/SessionInactivityGuard';
 import {
   PreferencesProvider,
   getRegionLabel,
@@ -28,6 +34,11 @@ import {
 } from '@/components/preferences/PreferencesProvider';
 import { UserAvatar } from '@/components/preferences/UserAvatar';
 import { createSupabaseBrowserClient, isSupabaseConfigured } from '@/lib/supabase/client';
+import {
+  cacheCurrentPageForOffline,
+  clearOfflineUserCache,
+  registerOfflineServiceWorker,
+} from '@/lib/offline/client';
 
 function AppShellInner({
   perfil,
@@ -41,10 +52,25 @@ function AppShellInner({
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [loggedOutOffline, setLoggedOutOffline] = useState(false);
+  const [logoutRetryMsg, setLogoutRetryMsg] = useState<string | null>(null);
+  const { effectiveOnline, checkConnectionNow, checkingConnection } = useSessionGuard();
   const { t, locale, resolvedTheme, toggleDarkTheme, getUserCustomization } = usePreferences();
 
   const customization = getUserCustomization(perfil.id, perfil.rol);
   const isDark = resolvedTheme === 'dark' || resolvedTheme === 'midnight';
+
+  useEffect(() => {
+    void registerOfflineServiceWorker();
+  }, []);
+
+  useEffect(() => {
+    if (!effectiveOnline) return;
+    const timerId = window.setTimeout(() => {
+      void cacheCurrentPageForOffline(window.location.href);
+    }, 300);
+    return () => window.clearTimeout(timerId);
+  }, [pathname, effectiveOnline]);
 
   const navItems = [
     { href: '/', label: t.navDashboard, icon: LayoutDashboard },
@@ -62,17 +88,72 @@ function AppShellInner({
     } catch {
       // Ignorar
     }
+    await clearOfflineUserCache();
     try {
       if (isSupabaseConfigured()) {
         const supabase = createSupabaseBrowserClient();
         await supabase?.auth.signOut({ scope: 'local' });
       }
-      await fetch('/api/auth/logout', { method: 'POST' }).catch(() => null);
-    } finally {
-      router.replace('/login');
-      router.refresh();
+      if (typeof navigator === 'undefined' || navigator.onLine) {
+        await fetch('/api/auth/logout', { method: 'POST' }).catch(() => null);
+      }
+    } catch {
+      // Continuar incluso sin conexión
     }
+
+    if (!effectiveOnline || (typeof navigator !== 'undefined' && navigator.onLine === false)) {
+      setLoggedOutOffline(true);
+      setLogoutRetryMsg(null);
+      return;
+    }
+
+    router.replace('/login');
+    router.refresh();
   };
+
+  const handleGoToLoginAfterOfflineLogout = async () => {
+    setLogoutRetryMsg(null);
+    const connected = await checkConnectionNow();
+    if (!connected) {
+      setLogoutRetryMsg('Sin conexión a internet. Restablece tu conexión para volver a iniciar sesión.');
+      return;
+    }
+    router.replace('/login');
+    router.refresh();
+  };
+
+  if (loggedOutOffline) {
+    return (
+      <div className="min-h-[100dvh] flex items-center justify-center bg-slate-900 text-white p-4 sm:p-6">
+        <div className="max-w-md w-full bg-slate-800 border border-slate-700 rounded-xl p-6 text-center space-y-4">
+          <LogOut className="w-10 h-10 text-amber-400 mx-auto" />
+          <h2 className="text-lg font-semibold">Sesión cerrada sin conexión</h2>
+          <p className="text-sm text-slate-300">
+            Tu sesión local y tus borradores en este navegador fueron eliminados de forma segura. Conéctate a internet
+            para iniciar sesión nuevamente.
+          </p>
+          {logoutRetryMsg && (
+            <div
+              role="alert"
+              className="bg-red-950/70 border border-red-700/60 text-red-200 rounded-lg p-3 text-xs flex items-center justify-center gap-2"
+            >
+              <WifiOff className="w-4 h-4 shrink-0" />
+              <span>{logoutRetryMsg}</span>
+            </div>
+          )}
+          <button
+            type="button"
+            disabled={checkingConnection}
+            onClick={() => void handleGoToLoginAfterOfflineLogout()}
+            className="w-full py-2.5 px-4 rounded-lg bg-brand-600 hover:bg-brand-500 disabled:opacity-60 font-medium text-sm inline-flex items-center justify-center gap-2"
+          >
+            {checkingConnection && <RefreshCw className="w-4 h-4 animate-spin" />}
+            {checkingConnection ? 'Verificando conexión...' : 'Ir a Iniciar Sesión'}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const isMoreRouteActive = ['/proyectos', '/bitacora', '/preferencias'].some(
     (p) => pathname === p || pathname.startsWith(p)
@@ -112,9 +193,10 @@ function AppShellInner({
                 <Link
                   key={item.href}
                   href={item.href}
+                  title={!active && !effectiveOnline ? 'Requiere conexión para cambiar de sección' : undefined}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                     active ? 'bg-brand-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                  }`}
+                  } ${!active && !effectiveOnline ? 'opacity-60' : ''}`}
                 >
                   <Icon className="w-4 h-4 shrink-0" />
                   <span>{item.label}</span>
@@ -181,9 +263,10 @@ function AppShellInner({
                       key={item.href}
                       href={item.href}
                       onClick={() => setMobileOpen(false)}
+                      title={!active && !effectiveOnline ? 'Requiere conexión para cambiar de sección' : undefined}
                       className={`flex items-center gap-3 px-3 min-h-[44px] rounded-lg text-sm font-medium ${
                         active ? 'bg-brand-600 text-white' : 'text-slate-300 hover:bg-slate-800'
-                      }`}
+                      } ${!active && !effectiveOnline ? 'opacity-60' : ''}`}
                     >
                       <Icon className="w-4 h-4 shrink-0" />
                       <span>{item.label}</span>
@@ -287,9 +370,10 @@ function AppShellInner({
                   <Link
                     key={item.href}
                     href={item.href}
+                    title={!active && !effectiveOnline ? 'Requiere conexión para cambiar de sección' : undefined}
                     className={`flex flex-col items-center justify-center gap-0.5 py-1.5 min-h-[44px] rounded-lg text-[10px] font-semibold transition-colors ${
                       active ? 'text-brand-600 bg-brand-50/70' : 'text-slate-600 hover:text-slate-900'
-                    }`}
+                    } ${!active && !effectiveOnline ? 'opacity-60' : ''}`}
                   >
                     <Icon className="w-4 h-4 shrink-0" />
                     <span className="truncate max-w-full px-1">{item.label}</span>

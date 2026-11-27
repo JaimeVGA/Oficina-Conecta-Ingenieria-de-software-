@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { CheckSquare, ShieldAlert } from 'lucide-react';
 import { SolicitudEstadoBadge } from '@/components/autorizaciones/SolicitudEstadoBadge';
 import { ResolverSolicitudModal } from '@/components/autorizaciones/ResolverSolicitudModal';
+import { useSessionGuard } from '@/components/session/SessionInactivityGuard';
+import { isNetworkError } from '@/lib/offline/client';
 import { formatMexicoCityDateTime } from '@/lib/dates/mexicoCity';
 import type { EstadoSolicitud, PerfilUsuario, SolicitudEnriquecida } from '@/lib/supabase/types';
 
@@ -15,6 +17,7 @@ export function AutorizacionesClient({
   actor: PerfilUsuario;
   initialSolicitudes: SolicitudEnriquecida[];
 }) {
+  const { effectiveOnline, reportNetworkFailure } = useSessionGuard();
   const [solicitudes, setSolicitudes] = useState(initialSolicitudes);
   const [filterEstado, setFilterEstado] = useState<'TODAS' | EstadoSolicitud>('TODAS');
   const [resolving, setResolving] = useState<SolicitudEnriquecida | null>(null);
@@ -25,9 +28,16 @@ export function AutorizacionesClient({
   }, [solicitudes, filterEstado]);
 
   const refresh = async () => {
-    const res = await fetch('/api/solicitudes');
-    const json = (await res.json()) as { solicitudes?: SolicitudEnriquecida[] };
-    if (json.solicitudes) setSolicitudes(json.solicitudes);
+    if (!effectiveOnline) return;
+    try {
+      const res = await fetch('/api/solicitudes');
+      const json = (await res.json()) as { solicitudes?: SolicitudEnriquecida[] };
+      if (json.solicitudes) setSolicitudes(json.solicitudes);
+    } catch (err) {
+      if (isNetworkError(err)) {
+        reportNetworkFailure();
+      }
+    }
   };
 
   return (
